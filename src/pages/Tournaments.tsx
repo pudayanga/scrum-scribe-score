@@ -13,7 +13,7 @@ interface Tournament {
   description: string;
   start_date: string;
   end_date: string;
-  status: 'upcoming' | 'ongoing' | 'completed';
+  status: string;
   created_at: string;
 }
 

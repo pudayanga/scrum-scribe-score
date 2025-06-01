@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface Match {
   id: string;
   scheduled_date: string;
-  status: 'upcoming' | 'live' | 'half-time' | 'ended';
+  status: string;
   half: number;
   match_time: number;
   team1_score: number;
