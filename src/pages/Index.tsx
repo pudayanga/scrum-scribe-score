@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from 'react';
+import { Layout } from '../components/Layout';
 import { MatchHeader } from '../components/MatchHeader';
 import { TeamPanel } from '../components/TeamPanel';
 import { ScoreInput } from '../components/ScoreInput';
@@ -7,7 +7,6 @@ import { ScoringTimeline } from '../components/ScoringTimeline';
 import { MatchStatistics } from '../components/MatchStatistics';
 import { QuickActions } from '../components/QuickActions';
 import { AuthPanel } from '../components/AuthPanel';
-import { Button } from '@/components/ui/button';
 
 export interface Team {
   id: string;
@@ -174,91 +173,62 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-2">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-semibold text-gray-800">Rugby Scoring</h1>
-            <div className="flex items-center space-x-6 text-sm">
-              <span className="px-3 py-1 bg-orange-500 text-white rounded font-medium">Home</span>
-              <span className="text-gray-600">Tournaments</span>
-              <span className="text-gray-600">Teams</span>
-              <span className="text-gray-600">Players</span>
-              <span className="text-gray-600">Matches</span>
-              <span className="text-gray-600">Statistics</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">Role: {user.role}</span>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setUser(null)}
-            >
-              Logout
-            </Button>
-          </div>
-        </div>
+    <Layout user={user} onLogout={() => setUser(null)}>
+      {/* Main Title */}
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Rugby Scoring System</h1>
+        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          A modern rugby scoring application for tournaments, teams, and 
+          matches with live updates and statistics.
+        </p>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Main Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Rugby Scoring System</h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            A modern rugby scoring application for tournaments, teams, and 
-            matches with live updates and statistics.
-          </p>
-        </div>
+      {/* Match Header */}
+      <MatchHeader 
+        match={match}
+        isTimerRunning={isTimerRunning}
+        onTimerToggle={() => setIsTimerRunning(!isTimerRunning)}
+        onStatusChange={handleStatusChange}
+        formatTime={formatTime}
+        userRole={user.role}
+      />
 
-        {/* Match Header */}
-        <MatchHeader 
-          match={match}
-          isTimerRunning={isTimerRunning}
-          onTimerToggle={() => setIsTimerRunning(!isTimerRunning)}
-          onStatusChange={handleStatusChange}
-          formatTime={formatTime}
-          userRole={user.role}
-        />
-
-        {/* Team Panels */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <TeamPanel team={match.teams[0]} />
-          <TeamPanel team={match.teams[1]} />
-        </div>
-
-        {/* Score Input and Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {(user.role === 'coach' || user.role === 'admin') && (
-            <div className="lg:col-span-2">
-              <ScoreInput 
-                teams={match.teams}
-                onScoreAdd={handleScoreAdd}
-                userRole={user.role}
-                userTeamId={user.teamId}
-                getPointsForScoreType={getPointsForScoreType}
-                isMatchLive={match.status === 'live'}
-              />
-            </div>
-          )}
-          <QuickActions userRole={user.role} />
-        </div>
-
-        {/* Timeline and Statistics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ScoringTimeline events={scoringEvents} teams={match.teams} />
-          <MatchStatistics teams={match.teams} />
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-12 pt-8 border-t border-gray-200">
-          <p className="text-sm text-gray-500">
-            © 2025 Rugby Scorer • Modern rugby scoring application
-          </p>
-        </div>
+      {/* Team Panels */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <TeamPanel team={match.teams[0]} />
+        <TeamPanel team={match.teams[1]} />
       </div>
-    </div>
+
+      {/* Score Input and Quick Actions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {(user.role === 'coach' || user.role === 'admin') && (
+          <div className="lg:col-span-2">
+            <ScoreInput 
+              teams={match.teams}
+              onScoreAdd={handleScoreAdd}
+              userRole={user.role}
+              userTeamId={user.teamId}
+              getPointsForScoreType={getPointsForScoreType}
+              isMatchLive={match.status === 'live'}
+            />
+          </div>
+        )}
+        <QuickActions userRole={user.role} />
+      </div>
+
+      {/* Timeline and Statistics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ScoringTimeline events={scoringEvents} teams={match.teams} />
+        <MatchStatistics teams={match.teams} />
+      </div>
+
+      {/* Footer */}
+      <div className="text-center mt-12 pt-8 border-t border-gray-200">
+        <p className="text-sm text-gray-500">
+          © 2025 Rugby Scorer • Modern rugby scoring application
+        </p>
+      </div>
+    </Layout>
   );
 };
 
