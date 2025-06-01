@@ -19,14 +19,14 @@ interface Match {
   team1: {
     name: string;
     logo: string;
-  };
+  } | null;
   team2: {
     name: string;
     logo: string;
-  };
+  } | null;
   tournaments?: {
     name: string;
-  };
+  } | null;
 }
 
 const Matches = () => {
@@ -43,11 +43,11 @@ const Matches = () => {
         .from('matches')
         .select(`
           *,
-          team1:team1_id (
+          team1:teams!matches_team1_id_fkey (
             name,
             logo
           ),
-          team2:team2_id (
+          team2:teams!matches_team2_id_fkey (
             name,
             logo
           ),
@@ -58,6 +58,7 @@ const Matches = () => {
         .order('scheduled_date', { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched matches:', data);
       setMatches(data || []);
     } catch (error) {
       console.error('Error fetching matches:', error);
@@ -134,9 +135,9 @@ const Matches = () => {
                       <div className="flex items-center space-x-6">
                         {/* Team 1 */}
                         <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{match.team1.logo}</span>
+                          <span className="text-2xl">{match.team1?.logo || '🏉'}</span>
                           <div>
-                            <div className="font-semibold">{match.team1.name}</div>
+                            <div className="font-semibold">{match.team1?.name || 'Team 1'}</div>
                             <div className="text-2xl font-bold text-blue-600">{match.team1_score}</div>
                           </div>
                         </div>
@@ -145,9 +146,9 @@ const Matches = () => {
 
                         {/* Team 2 */}
                         <div className="flex items-center space-x-3">
-                          <span className="text-2xl">{match.team2.logo}</span>
+                          <span className="text-2xl">{match.team2?.logo || '🏉'}</span>
                           <div>
-                            <div className="font-semibold">{match.team2.name}</div>
+                            <div className="font-semibold">{match.team2?.name || 'Team 2'}</div>
                             <div className="text-2xl font-bold text-blue-600">{match.team2_score}</div>
                           </div>
                         </div>
