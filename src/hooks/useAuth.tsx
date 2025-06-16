@@ -1,6 +1,5 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface User {
   id: string;
@@ -39,23 +38,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return { success: false, error: 'Invalid password' };
       }
 
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('username', username)
-        .eq('role', role)
-        .single();
+      // Demo users for testing
+      const demoUsers = [
+        {
+          id: '1',
+          username: 'coach1',
+          role: 'coach',
+          full_name: 'John Smith',
+          email: 'john.smith@example.com'
+        },
+        {
+          id: '2',
+          username: 'coach2',
+          role: 'coach',
+          full_name: 'Sarah Johnson',
+          email: 'sarah.johnson@example.com'
+        },
+        {
+          id: '3',
+          username: 'admin1',
+          role: 'admin',
+          full_name: 'Admin User',
+          email: 'admin@example.com'
+        }
+      ];
 
-      if (error || !data) {
+      const foundUser = demoUsers.find(u => u.username === username && u.role === role);
+      
+      if (!foundUser) {
         return { success: false, error: 'Invalid username or role' };
       }
 
       const userData: User = {
-        id: data.id,
-        username: data.username,
-        role: data.role,
-        full_name: data.full_name,
-        email: data.email
+        id: foundUser.id,
+        username: foundUser.username,
+        role: foundUser.role as 'coach' | 'viewer' | 'admin',
+        full_name: foundUser.full_name,
+        email: foundUser.email
       };
 
       setUser(userData);

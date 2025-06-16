@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { MatchHeader } from '../components/MatchHeader';
@@ -171,7 +172,7 @@ const Index = () => {
   };
 
   if (!user) {
-    return <AuthPanel onLogin={setUser} />;
+    return null; // This will be handled by the protected route
   }
 
   return (
@@ -216,7 +217,7 @@ const Index = () => {
               teams={match.teams}
               onScoreAdd={handleScoreAdd}
               userRole={user.role}
-              userTeamId={user.teamId}
+              userTeamId={undefined}
               getPointsForScoreType={getPointsForScoreType}
               isMatchLive={match.status === 'live'}
             />
