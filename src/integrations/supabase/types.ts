@@ -127,14 +127,73 @@ export type Database = {
           },
         ]
       }
+      player_tracking: {
+        Row: {
+          action: string
+          created_at: string | null
+          description: string | null
+          field_position: string | null
+          id: string
+          player_id: string
+          points_h: number | null
+          points_v: number | null
+          team_id: string
+          tracking_time: number
+          updated_at: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          description?: string | null
+          field_position?: string | null
+          id?: string
+          player_id: string
+          points_h?: number | null
+          points_v?: number | null
+          team_id: string
+          tracking_time: number
+          updated_at?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          description?: string | null
+          field_position?: string | null
+          id?: string
+          player_id?: string
+          points_h?: number | null
+          points_v?: number | null
+          team_id?: string
+          tracking_time?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_tracking_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_tracking_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           age: number | null
           created_at: string
+          email: string | null
           height: number | null
           id: string
           jersey_number: number
           name: string
+          phone: string | null
           position: string | null
           team_id: string
           updated_at: string
@@ -143,10 +202,12 @@ export type Database = {
         Insert: {
           age?: number | null
           created_at?: string
+          email?: string | null
           height?: number | null
           id?: string
           jersey_number: number
           name: string
+          phone?: string | null
           position?: string | null
           team_id: string
           updated_at?: string
@@ -155,10 +216,12 @@ export type Database = {
         Update: {
           age?: number | null
           created_at?: string
+          email?: string | null
           height?: number | null
           id?: string
           jersey_number?: number
           name?: string
+          phone?: string | null
           position?: string | null
           team_id?: string
           updated_at?: string

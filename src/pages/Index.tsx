@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { MatchHeader } from '../components/MatchHeader';
@@ -7,7 +6,6 @@ import { ScoreInput } from '../components/ScoreInput';
 import { ScoringTimeline } from '../components/ScoringTimeline';
 import { MatchStatistics } from '../components/MatchStatistics';
 import { QuickActions } from '../components/QuickActions';
-import { PlayerManagement } from '../components/PlayerManagement';
 import { useAuth } from '../hooks/useAuth';
 
 export interface Team {
@@ -185,13 +183,6 @@ const Index = () => {
           matches with live updates and statistics.
         </p>
       </div>
-
-      {/* Coach Player Management */}
-      {user?.role === 'coach' && (
-        <div className="mb-8">
-          <PlayerManagement />
-        </div>
-      )}
 
       {/* Match Header */}
       <MatchHeader 
