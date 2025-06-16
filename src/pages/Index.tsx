@@ -6,7 +6,8 @@ import { ScoreInput } from '../components/ScoreInput';
 import { ScoringTimeline } from '../components/ScoringTimeline';
 import { MatchStatistics } from '../components/MatchStatistics';
 import { QuickActions } from '../components/QuickActions';
-import { AuthPanel } from '../components/AuthPanel';
+import { PlayerManagement } from '../components/PlayerManagement';
+import { useAuth } from '../hooks/useAuth';
 
 export interface Team {
   id: string;
@@ -50,7 +51,8 @@ export interface MatchData {
 }
 
 const Index = () => {
-  const [user, setUser] = useState<{ role: 'coach' | 'viewer' | 'admin'; teamId?: string } | null>(null);
+  const { user } = useAuth();
+  
   const [match, setMatch] = useState<MatchData>({
     id: '1',
     title: 'Dragons vs Lions',
@@ -173,7 +175,7 @@ const Index = () => {
   }
 
   return (
-    <Layout user={user} onLogout={() => setUser(null)}>
+    <Layout>
       {/* Main Title */}
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Rugby Scoring System</h1>
@@ -183,6 +185,13 @@ const Index = () => {
         </p>
       </div>
 
+      {/* Coach Player Management */}
+      {user?.role === 'coach' && (
+        <div className="mb-8">
+          <PlayerManagement />
+        </div>
+      )}
+
       {/* Match Header */}
       <MatchHeader 
         match={match}
@@ -190,7 +199,7 @@ const Index = () => {
         onTimerToggle={() => setIsTimerRunning(!isTimerRunning)}
         onStatusChange={handleStatusChange}
         formatTime={formatTime}
-        userRole={user.role}
+        userRole={user?.role || 'viewer'}
       />
 
       {/* Team Panels */}
@@ -201,7 +210,7 @@ const Index = () => {
 
       {/* Score Input and Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {(user.role === 'coach' || user.role === 'admin') && (
+        {(user?.role === 'coach' || user?.role === 'admin') && (
           <div className="lg:col-span-2">
             <ScoreInput 
               teams={match.teams}
@@ -213,7 +222,7 @@ const Index = () => {
             />
           </div>
         )}
-        <QuickActions userRole={user.role} />
+        <QuickActions userRole={user?.role || 'viewer'} />
       </div>
 
       {/* Timeline and Statistics */}

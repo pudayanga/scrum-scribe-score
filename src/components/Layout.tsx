@@ -1,15 +1,15 @@
 
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LayoutProps {
   children: React.ReactNode;
-  user?: { role: 'coach' | 'viewer' | 'admin'; teamId?: string } | null;
-  onLogout?: () => void;
 }
 
-export const Layout = ({ children, user, onLogout }: LayoutProps) => {
+export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const navItems = [
     { path: '/', label: 'Home' },
@@ -43,10 +43,12 @@ export const Layout = ({ children, user, onLogout }: LayoutProps) => {
               ))}
             </div>
           </div>
-          {user && onLogout && (
+          {user && (
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Role: {user.role}</span>
-              <Button variant="outline" size="sm" onClick={onLogout}>
+              <span className="text-sm text-gray-600">
+                {user.role === 'coach' ? `Welcome ${user.full_name}` : `Role: ${user.role}`}
+              </span>
+              <Button variant="outline" size="sm" onClick={logout}>
                 Logout
               </Button>
             </div>
