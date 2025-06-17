@@ -32,9 +32,10 @@ interface PlayerFormProps {
   onPlayerSaved: () => void;
   teams: Team[];
   players: Player[];
+  preselectedTeamId?: string;
 }
 
-export const PlayerForm = ({ isOpen, onClose, editingPlayer, onPlayerSaved, teams, players }: PlayerFormProps) => {
+export const PlayerForm = ({ isOpen, onClose, editingPlayer, onPlayerSaved, teams, players, preselectedTeamId }: PlayerFormProps) => {
   const [formData, setFormData] = useState({
     name: '',
     jersey_number: '',
@@ -64,8 +65,11 @@ export const PlayerForm = ({ isOpen, onClose, editingPlayer, onPlayerSaved, team
       });
     } else {
       resetForm();
+      if (preselectedTeamId) {
+        setFormData(prev => ({ ...prev, team_id: preselectedTeamId }));
+      }
     }
-  }, [editingPlayer, isOpen]);
+  }, [editingPlayer, isOpen, preselectedTeamId]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};

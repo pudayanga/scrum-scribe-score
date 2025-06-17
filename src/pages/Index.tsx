@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { MatchHeader } from '../components/MatchHeader';
@@ -67,7 +66,7 @@ const Index = () => {
 
   const fetchLatestTournamentMatch = async () => {
     try {
-      // First, get the latest tournament (ongoing > upcoming > completed)
+      // First, get tournaments prioritizing ongoing > upcoming > completed
       let { data: tournaments, error: tournamentsError } = await supabase
         .from('tournaments')
         .select('*')
@@ -114,7 +113,7 @@ const Index = () => {
       const latestMatch = matches[0];
 
       // Get players for both teams
-      const [team1Players, team2Players] = await Promise.all([
+      const [team1PlayersResponse, team2PlayersResponse] = await Promise.all([
         supabase
           .from('players')
           .select('*')
@@ -132,8 +131,8 @@ const Index = () => {
         .eq('match_id', latestMatch.id);
 
       // Transform data to match the interface
-      const transformPlayers = (players: any[], stats: any[]) => {
-        return players.data?.map((player: any) => {
+      const transformPlayers = (playersData: any[] | null, stats: any[]) => {
+        return playersData?.map((player: any) => {
           const playerStat = stats?.find(s => s.player_id === player.id) || {};
           return {
             id: player.id,
@@ -151,8 +150,8 @@ const Index = () => {
         id: latestMatch.id,
         title: `${latestMatch.team1.name} vs ${latestMatch.team2.name}`,
         date: latestMatch.scheduled_date,
-        status: latestMatch.status || 'upcoming',
-        half: latestMatch.half || 1,
+        status: (latestMatch.status || 'upcoming') as 'upcoming' | 'live' | 'half-time' | 'ended',
+        half: (latestMatch.half || 1) as 1 | 2,
         time: latestMatch.match_time || 0,
         teams: [
           {
@@ -160,14 +159,14 @@ const Index = () => {
             name: latestMatch.team1.name,
             logo: latestMatch.team1.logo,
             score: latestMatch.team1_score || 0,
-            players: transformPlayers(team1Players, playerStats || [])
+            players: transformPlayers(team1PlayersResponse.data, playerStats || [])
           },
           {
             id: latestMatch.team2_id,
             name: latestMatch.team2.name,
             logo: latestMatch.team2.logo,
             score: latestMatch.team2_score || 0,
-            players: transformPlayers(team2Players, playerStats || [])
+            players: transformPlayers(team2PlayersResponse.data, playerStats || [])
           }
         ]
       };
