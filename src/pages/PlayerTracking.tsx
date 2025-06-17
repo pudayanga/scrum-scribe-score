@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layout } from '../components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,13 @@ const PlayerTracking = () => {
     setRefreshTrigger(prev => prev + 1);
     setSelectedPosition('');
     setCapturedTime(0);
+  };
+
+  const handleEditRecord = (recordData: any) => {
+    // Use the global method to set editing data in the form
+    if ((window as any).setPlayerTrackingEditData) {
+      (window as any).setPlayerTrackingEditData(recordData);
+    }
   };
 
   const downloadTrackingData = async () => {
@@ -252,6 +259,7 @@ const PlayerTracking = () => {
               teamId={selectedTeam}
               tournamentId={selectedTournament}
               refreshTrigger={refreshTrigger}
+              onEditRecord={handleEditRecord}
             />
           </>
         )}

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { MatchHeader } from '../components/MatchHeader';
@@ -7,6 +8,8 @@ import { ScoringTimeline } from '../components/ScoringTimeline';
 import { MatchStatistics } from '../components/MatchStatistics';
 import { QuickActions } from '../components/QuickActions';
 import { useAuth } from '../hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Team {
   id: string;
@@ -45,66 +48,184 @@ export interface MatchData {
   date: string;
   status: 'upcoming' | 'live' | 'half-time' | 'ended';
   half: 1 | 2;
-  time: number; // in seconds
+  time: number;
   teams: [Team, Team];
 }
 
 const Index = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   
-  const [match, setMatch] = useState<MatchData>({
-    id: '1',
-    title: 'Dragons vs Lions',
-    date: new Date().toISOString(),
-    status: 'upcoming',
-    half: 1,
-    time: 0,
-    teams: [
-      {
-        id: 'team1',
-        name: 'Dragons',
-        logo: '🐉',
-        score: 0,
-        players: [
-          { id: 'p1', number: 1, name: 'John Smith', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-          { id: 'p2', number: 2, name: 'Mike Johnson', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-          { id: 'p3', number: 3, name: 'Tom Wilson', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-          { id: 'p4', number: 7, name: 'David Brown', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-          { id: 'p5', number: 9, name: 'Chris Davis', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-        ]
-      },
-      {
-        id: 'team2',
-        name: 'Lions',
-        logo: '🦁',
-        score: 0,
-        players: [
-          { id: 'p6', number: 1, name: 'Alex Miller', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-          { id: 'p7', number: 2, name: 'Sam Taylor', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-          { id: 'p8', number: 3, name: 'Ryan Anderson', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-          { id: 'p9', number: 7, name: 'Luke Thomas', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-          { id: 'p10', number: 9, name: 'Jake Martin', tries: 0, conversions: 0, penalties: 0, dropGoals: 0 },
-        ]
-      }
-    ]
-  });
-  
+  const [match, setMatch] = useState<MatchData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [scoringEvents, setScoringEvents] = useState<ScoringEvent[]>([]);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+
+  useEffect(() => {
+    fetchLatestTournamentMatch();
+  }, []);
+
+  const fetchLatestTournamentMatch = async () => {
+    try {
+      // First, get the latest tournament (ongoing > upcoming > completed)
+      let { data: tournaments, error: tournamentsError } = await supabase
+        .from('tournaments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (tournamentsError) throw tournamentsError;
+
+      if (!tournaments || tournaments.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      // Prioritize ongoing, then upcoming, then completed
+      const ongoingTournament = tournaments.find(t => t.status === 'ongoing');
+      const upcomingTournament = tournaments.find(t => t.status === 'upcoming');
+      const completedTournament = tournaments.find(t => t.status === 'completed');
+      
+      const selectedTournament = ongoingTournament || upcomingTournament || completedTournament;
+
+      if (!selectedTournament) {
+        setLoading(false);
+        return;
+      }
+
+      // Get matches for this tournament
+      const { data: matches, error: matchesError } = await supabase
+        .from('matches')
+        .select(`
+          *,
+          team1:teams!team1_id(id, name, logo),
+          team2:teams!team2_id(id, name, logo)
+        `)
+        .eq('tournament_id', selectedTournament.id)
+        .order('scheduled_date', { ascending: false })
+        .limit(1);
+
+      if (matchesError) throw matchesError;
+
+      if (!matches || matches.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      const latestMatch = matches[0];
+
+      // Get players for both teams
+      const [team1Players, team2Players] = await Promise.all([
+        supabase
+          .from('players')
+          .select('*')
+          .eq('team_id', latestMatch.team1_id),
+        supabase
+          .from('players')
+          .select('*')
+          .eq('team_id', latestMatch.team2_id)
+      ]);
+
+      // Get player statistics for this match
+      const { data: playerStats } = await supabase
+        .from('player_statistics')
+        .select('*')
+        .eq('match_id', latestMatch.id);
+
+      // Transform data to match the interface
+      const transformPlayers = (players: any[], stats: any[]) => {
+        return players.data?.map((player: any) => {
+          const playerStat = stats?.find(s => s.player_id === player.id) || {};
+          return {
+            id: player.id,
+            number: player.jersey_number,
+            name: player.name,
+            tries: playerStat.tries || 0,
+            conversions: playerStat.conversions || 0,
+            penalties: playerStat.penalties || 0,
+            dropGoals: playerStat.drop_goals || 0
+          };
+        }) || [];
+      };
+
+      const matchData: MatchData = {
+        id: latestMatch.id,
+        title: `${latestMatch.team1.name} vs ${latestMatch.team2.name}`,
+        date: latestMatch.scheduled_date,
+        status: latestMatch.status || 'upcoming',
+        half: latestMatch.half || 1,
+        time: latestMatch.match_time || 0,
+        teams: [
+          {
+            id: latestMatch.team1_id,
+            name: latestMatch.team1.name,
+            logo: latestMatch.team1.logo,
+            score: latestMatch.team1_score || 0,
+            players: transformPlayers(team1Players, playerStats || [])
+          },
+          {
+            id: latestMatch.team2_id,
+            name: latestMatch.team2.name,
+            logo: latestMatch.team2.logo,
+            score: latestMatch.team2_score || 0,
+            players: transformPlayers(team2Players, playerStats || [])
+          }
+        ]
+      };
+
+      setMatch(matchData);
+
+      // Get scoring events for this match
+      const { data: events } = await supabase
+        .from('scoring_events')
+        .select(`
+          *,
+          player:players(name, jersey_number),
+          team:teams(name)
+        `)
+        .eq('match_id', latestMatch.id)
+        .order('created_at', { ascending: false });
+
+      if (events) {
+        const transformedEvents: ScoringEvent[] = events.map(event => ({
+          id: event.id,
+          timestamp: event.match_time,
+          teamId: event.team_id,
+          teamName: event.team.name,
+          playerId: event.player_id,
+          playerName: event.player.name,
+          playerNumber: event.player.jersey_number,
+          type: event.event_type as any,
+          points: event.points,
+          comment: event.comment
+        }));
+        setScoringEvents(transformedEvents);
+      }
+
+    } catch (error) {
+      console.error('Error fetching tournament match:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load tournament data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout;
-    if (isTimerRunning && match.status === 'live') {
+    if (isTimerRunning && match?.status === 'live') {
       interval = setInterval(() => {
-        setMatch(prev => ({
+        setMatch(prev => prev ? ({
           ...prev,
           time: prev.time + 1
-        }));
+        }) : null);
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [isTimerRunning, match.status]);
+  }, [isTimerRunning, match?.status]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -122,46 +243,83 @@ const Index = () => {
     }
   };
 
-  const handleScoreAdd = (event: Omit<ScoringEvent, 'id' | 'timestamp'>) => {
-    const newEvent: ScoringEvent = {
-      ...event,
-      id: Date.now().toString(),
-      timestamp: formatTime(match.time)
-    };
+  const handleScoreAdd = async (event: Omit<ScoringEvent, 'id' | 'timestamp'>) => {
+    if (!match) return;
 
-    setScoringEvents(prev => [newEvent, ...prev]);
+    try {
+      // Save to database
+      const { error } = await supabase
+        .from('scoring_events')
+        .insert({
+          match_id: match.id,
+          team_id: event.teamId,
+          player_id: event.playerId,
+          event_type: event.type,
+          points: event.points,
+          match_time: formatTime(match.time),
+          comment: event.comment
+        });
 
-    // Update team score and player stats
-    setMatch(prev => {
-      const updatedTeams = prev.teams.map(team => {
-        if (team.id === event.teamId) {
-          return {
-            ...team,
-            score: team.score + event.points,
-            players: team.players.map(player => {
-              if (player.id === event.playerId) {
-                return {
-                  ...player,
-                  [event.type === 'drop-goal' ? 'dropGoals' : event.type + 's']: 
-                    player[event.type === 'drop-goal' ? 'dropGoals' : event.type + 's' as keyof Player] as number + 1
-                };
-              }
-              return player;
-            })
-          };
-        }
-        return team;
-      }) as [Team, Team];
+      if (error) throw error;
 
-      return {
-        ...prev,
-        teams: updatedTeams
+      // Update local state
+      const newEvent: ScoringEvent = {
+        ...event,
+        id: Date.now().toString(),
+        timestamp: formatTime(match.time)
       };
-    });
+
+      setScoringEvents(prev => [newEvent, ...prev]);
+
+      // Update match score and player stats
+      setMatch(prev => {
+        if (!prev) return null;
+        
+        const updatedTeams = prev.teams.map(team => {
+          if (team.id === event.teamId) {
+            return {
+              ...team,
+              score: team.score + event.points,
+              players: team.players.map(player => {
+                if (player.id === event.playerId) {
+                  return {
+                    ...player,
+                    [event.type === 'drop-goal' ? 'dropGoals' : event.type + 's']: 
+                      player[event.type === 'drop-goal' ? 'dropGoals' : event.type + 's' as keyof Player] as number + 1
+                  };
+                }
+                return player;
+              })
+            };
+          }
+          return team;
+        }) as [Team, Team];
+
+        return {
+          ...prev,
+          teams: updatedTeams
+        };
+      });
+
+      toast({
+        title: "Success",
+        description: "Score added successfully!",
+      });
+
+    } catch (error) {
+      console.error('Error adding score:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add score",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleStatusChange = (status: MatchData['status']) => {
-    setMatch(prev => ({ ...prev, status }));
+    if (!match) return;
+    
+    setMatch(prev => prev ? ({ ...prev, status }) : null);
     if (status === 'live') {
       setIsTimerRunning(true);
     } else {
@@ -170,7 +328,33 @@ const Index = () => {
   };
 
   if (!user) {
-    return null; // This will be handled by the protected route
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="text-center py-8">Loading tournament data...</div>
+      </Layout>
+    );
+  }
+
+  if (!match) {
+    return (
+      <Layout>
+        <div className="text-center py-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Rugby Scoring System</h1>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto mb-8">
+            A modern rugby scoring application for tournaments, teams, and 
+            matches with live updates and statistics.
+          </p>
+          <div className="bg-gray-50 rounded-lg p-8">
+            <h2 className="text-xl font-semibold mb-2">No Tournament Data Available</h2>
+            <p className="text-gray-600">Create a tournament and schedule matches to get started.</p>
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
   return (

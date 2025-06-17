@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ const Players = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,15 +44,26 @@ const Players = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchPlayers();
     fetchTeams();
   }, []);
 
   useEffect(() => {
+    if (selectedTeam && selectedTeam !== 'all') {
+      fetchPlayers();
+    } else {
+      setPlayers([]);
+      setFilteredPlayers([]);
+    }
+  }, [selectedTeam]);
+
+  useEffect(() => {
     filterPlayers();
-  }, [players, searchTerm, selectedTeam]);
+  }, [players, searchTerm]);
 
   const fetchPlayers = async () => {
+    if (!selectedTeam || selectedTeam === 'all') return;
+    
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('players')
@@ -62,6 +74,7 @@ const Players = () => {
             logo
           )
         `)
+        .eq('team_id', selectedTeam)
         .order('jersey_number');
 
       if (error) throw error;
@@ -107,10 +120,6 @@ const Players = () => {
       );
     }
 
-    if (selectedTeam && selectedTeam !== 'all') {
-      filtered = filtered.filter(player => player.team_id === selectedTeam);
-    }
-
     setFilteredPlayers(filtered);
   };
 
@@ -147,6 +156,14 @@ const Players = () => {
   };
 
   const handleAddPlayer = () => {
+    if (selectedTeam === 'all') {
+      toast({
+        title: "Team Selection Required",
+        description: "Please select a team before adding a player.",
+        variant: "destructive",
+      });
+      return;
+    }
     setEditingPlayer(null);
     setIsOpen(true);
   };
@@ -155,13 +172,10 @@ const Players = () => {
     fetchPlayers();
   };
 
-  if (loading) {
-    return (
-      <Layout>
-        <div className="text-center py-8">Loading players...</div>
-      </Layout>
-    );
-  }
+  const handleTeamChange = (teamId: string) => {
+    setSelectedTeam(teamId);
+    setSearchTerm(''); // Reset search when team changes
+  };
 
   return (
     <Layout>
@@ -172,7 +186,11 @@ const Players = () => {
             <h1 className="text-3xl font-bold text-gray-900">Players</h1>
             <p className="text-gray-600 mt-2">Manage player profiles and information</p>
           </div>
-          <Button className="bg-purple-500 hover:bg-purple-600" onClick={handleAddPlayer}>
+          <Button 
+            className="bg-purple-500 hover:bg-purple-600" 
+            onClick={handleAddPlayer}
+            disabled={selectedTeam === 'all'}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Add Player
           </Button>
@@ -183,23 +201,44 @@ const Players = () => {
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
           selectedTeam={selectedTeam}
-          onTeamChange={setSelectedTeam}
+          onTeamChange={handleTeamChange}
           teams={teams}
         />
 
+        {/* Team Selection Notice */}
+        {selectedTeam === 'all' && (
+          <div className="text-center py-12">
+            <div className="bg-blue-50 rounded-lg p-8 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">Select a Team</h3>
+              <p className="text-blue-700">
+                Please select a team from the filter above to view and manage players.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && selectedTeam !== 'all' && (
+          <div className="text-center py-8">Loading players...</div>
+        )}
+
         {/* Players Table */}
-        {filteredPlayers.length > 0 ? (
-          <PlayerTable
-            players={filteredPlayers}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        ) : (
-          <PlayerEmptyState
-            hasPlayers={players.length > 0}
-            hasFilteredResults={filteredPlayers.length > 0}
-            onAddPlayer={handleAddPlayer}
-          />
+        {selectedTeam !== 'all' && !loading && (
+          <>
+            {filteredPlayers.length > 0 ? (
+              <PlayerTable
+                players={filteredPlayers}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+              />
+            ) : (
+              <PlayerEmptyState
+                hasPlayers={players.length > 0}
+                hasFilteredResults={filteredPlayers.length > 0}
+                onAddPlayer={handleAddPlayer}
+              />
+            )}
+          </>
         )}
 
         {/* Player Form Modal */}
@@ -210,6 +249,7 @@ const Players = () => {
           onPlayerSaved={handlePlayerSaved}
           teams={teams}
           players={players}
+          preselectedTeamId={selectedTeam !== 'all' ? selectedTeam : undefined}
         />
       </div>
     </Layout>

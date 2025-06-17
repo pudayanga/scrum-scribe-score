@@ -1,9 +1,9 @@
 
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Edit, Trash2, Users } from 'lucide-react';
 
 interface Player {
   id: string;
@@ -29,15 +29,30 @@ interface PlayerTableProps {
 }
 
 export const PlayerTable = ({ players, onEdit, onDelete }: PlayerTableProps) => {
+  const formatHeight = (height: number) => {
+    if (!height) return '-';
+    return `${height} cm`;
+  };
+
+  const formatWeight = (weight: number) => {
+    if (!weight) return '-';
+    return `${weight} kg`;
+  };
+
   return (
     <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Users className="h-5 w-5" />
+          <span>Players ({players.length})</span>
+        </CardTitle>
+      </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>#</TableHead>
+              <TableHead>Jersey #</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Team</TableHead>
               <TableHead>Position</TableHead>
               <TableHead>Age</TableHead>
               <TableHead>Height/Weight</TableHead>
@@ -49,31 +64,27 @@ export const PlayerTable = ({ players, onEdit, onDelete }: PlayerTableProps) => 
             {players.map((player) => (
               <TableRow key={player.id}>
                 <TableCell>
-                  <Badge variant="outline">#{player.jersey_number}</Badge>
+                  <Badge variant="outline" className="font-mono">
+                    #{player.jersey_number}
+                  </Badge>
                 </TableCell>
-                <TableCell className="font-semibold">{player.name}</TableCell>
-                <TableCell>
-                  <div className="flex items-center">
-                    <span className="mr-1">{player.teams?.logo}</span>
-                    <span>{player.teams?.name}</span>
-                  </div>
-                </TableCell>
+                <TableCell className="font-medium">{player.name}</TableCell>
                 <TableCell>{player.position || '-'}</TableCell>
                 <TableCell>{player.age || '-'}</TableCell>
                 <TableCell>
-                  {(player.height || player.weight) ? 
-                    `${player.height || '?'}cm / ${player.weight || '?'}kg` : 
-                    '-'
-                  }
+                  <div className="text-sm">
+                    <div>{formatHeight(player.height)}</div>
+                    <div className="text-gray-500">{formatWeight(player.weight)}</div>
+                  </div>
                 </TableCell>
-                <TableCell className="max-w-xs">
+                <TableCell>
                   <div className="text-sm">
                     <div>{player.email || '-'}</div>
                     <div className="text-gray-500">{player.phone || '-'}</div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-2">
+                  <div className="flex space-x-2">
                     <Button
                       variant="outline"
                       size="sm"

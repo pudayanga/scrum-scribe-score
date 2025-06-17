@@ -37,9 +37,11 @@ export const PlayerTrackingForm = ({
     description: '',
     field_position: selectedPosition,
     points_h: '',
-    points_v: ''
+    points_v: '',
+    id: '' // for editing
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,16 +51,39 @@ export const PlayerTrackingForm = ({
   }, [teamId]);
 
   useEffect(() => {
-    if (capturedTime > 0) {
+    if (capturedTime > 0 && !isEditing) {
       const mins = Math.floor(capturedTime / 60);
       const secs = (capturedTime % 60).toFixed(2);
       setFormData(prev => ({ ...prev, time: `${mins}:${secs.padStart(5, '0')}` }));
     }
-  }, [capturedTime]);
+  }, [capturedTime, isEditing]);
 
   useEffect(() => {
     setFormData(prev => ({ ...prev, field_position: selectedPosition }));
   }, [selectedPosition]);
+
+  // Method to set editing data from parent component
+  const setEditingData = (data: any) => {
+    setFormData({
+      time: data.time,
+      player_id: data.player_id,
+      action: data.action,
+      description: data.description,
+      field_position: data.field_position,
+      points_h: data.points_h,
+      points_v: data.points_v,
+      id: data.id
+    });
+    setIsEditing(true);
+  };
+
+  // Expose this method to parent
+  useEffect(() => {
+    (window as any).setPlayerTrackingEditData = setEditingData;
+    return () => {
+      delete (window as any).setPlayerTrackingEditData;
+    };
+  }, []);
 
   const fetchPlayers = async () => {
     try {
@@ -85,10 +110,12 @@ export const PlayerTrackingForm = ({
     if (!formData.action.trim()) newErrors.action = 'Action is required';
     if (!formData.field_position.trim()) newErrors.field_position = 'Field position is required';
     
-    // Validate time format (MM:SS.ss)
-    const timeRegex = /^\d{1,2}:\d{2}(\.\d{2})?$/;
-    if (formData.time && !timeRegex.test(formData.time)) {
-      newErrors.time = 'Time format should be MM:SS.ss';
+    // Validate time format (MM:SS.ss) only if not editing
+    if (!isEditing) {
+      const timeRegex = /^\d{1,2}:\d{2}(\.\d{2})?$/;
+      if (formData.time && !timeRegex.test(formData.time)) {
+        newErrors.time = 'Time format should be MM:SS.ss';
+      }
     }
 
     // Validate points if provided
@@ -118,27 +145,52 @@ export const PlayerTrackingForm = ({
     if (!validateForm()) return;
 
     try {
-      const trackingData = {
-        team_id: teamId,
-        player_id: formData.player_id,
-        tracking_time: convertTimeToSeconds(formData.time),
-        action: formData.action.trim(),
-        description: formData.description.trim() || null,
-        field_position: formData.field_position.trim(),
-        points_h: formData.points_h ? parseFloat(formData.points_h) : null,
-        points_v: formData.points_v ? parseFloat(formData.points_v) : null
-      };
+      if (isEditing) {
+        // Update existing record
+        const updateData = {
+          player_id: formData.player_id,
+          action: formData.action.trim(),
+          description: formData.description.trim() || null,
+          field_position: formData.field_position.trim(),
+          points_h: formData.points_h ? parseFloat(formData.points_h) : null,
+          points_v: formData.points_v ? parseFloat(formData.points_v) : null
+        };
 
-      const { error } = await supabase
-        .from('player_tracking')
-        .insert([trackingData]);
-      
-      if (error) throw error;
+        const { error } = await supabase
+          .from('player_tracking')
+          .update(updateData)
+          .eq('id', formData.id);
+        
+        if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Player tracking data saved successfully!",
-      });
+        toast({
+          title: "Success",
+          description: "Player tracking data updated successfully!",
+        });
+      } else {
+        // Create new record
+        const trackingData = {
+          team_id: teamId,
+          player_id: formData.player_id,
+          tracking_time: convertTimeToSeconds(formData.time),
+          action: formData.action.trim(),
+          description: formData.description.trim() || null,
+          field_position: formData.field_position.trim(),
+          points_h: formData.points_h ? parseFloat(formData.points_h) : null,
+          points_v: formData.points_v ? parseFloat(formData.points_v) : null
+        };
+
+        const { error } = await supabase
+          .from('player_tracking')
+          .insert([trackingData]);
+        
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Player tracking data saved successfully!",
+        });
+      }
 
       resetForm();
       onTrackingAdded();
@@ -146,7 +198,7 @@ export const PlayerTrackingForm = ({
       console.error('Error saving tracking data:', error);
       toast({
         title: "Error",
-        description: "Failed to save tracking data. Please try again.",
+        description: `Failed to ${isEditing ? 'update' : 'save'} tracking data. Please try again.`,
         variant: "destructive",
       });
     }
@@ -160,15 +212,21 @@ export const PlayerTrackingForm = ({
       description: '',
       field_position: '',
       points_h: '',
-      points_v: ''
+      points_v: '',
+      id: ''
     });
     setErrors({});
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    resetForm();
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Add Tracking Data</CardTitle>
+        <CardTitle>{isEditing ? 'Edit Tracking Data' : 'Add Tracking Data'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -179,6 +237,8 @@ export const PlayerTrackingForm = ({
                 value={formData.time}
                 onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                 placeholder="MM:SS.ss"
+                readOnly={isEditing}
+                className={isEditing ? 'bg-gray-100' : ''}
               />
               {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
             </div>
@@ -258,9 +318,14 @@ export const PlayerTrackingForm = ({
             </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {isEditing && (
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+            )}
             <Button type="submit" className="bg-blue-500 hover:bg-blue-600">
-              Add Tracking Data
+              {isEditing ? 'Update Tracking Data' : 'Add Tracking Data'}
             </Button>
           </div>
         </form>
