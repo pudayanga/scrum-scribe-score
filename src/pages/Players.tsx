@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Layout } from '../components/Layout';
 import { Button } from '@/components/ui/button';
@@ -40,7 +39,7 @@ const Players = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTeam, setSelectedTeam] = useState('');
+  const [selectedTeam, setSelectedTeam] = useState('all');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -108,7 +107,7 @@ const Players = () => {
       );
     }
 
-    if (selectedTeam) {
+    if (selectedTeam && selectedTeam !== 'all') {
       filtered = filtered.filter(player => player.team_id === selectedTeam);
     }
 
