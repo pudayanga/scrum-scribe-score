@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface PlayerTrackingTableProps {
   teamId: string;
+  tournamentId: string;
   refreshTrigger: number;
 }
 
@@ -38,7 +39,7 @@ interface Player {
   jersey_number: number;
 }
 
-export const PlayerTrackingTable = ({ teamId, refreshTrigger }: PlayerTrackingTableProps) => {
+export const PlayerTrackingTable = ({ teamId, tournamentId, refreshTrigger }: PlayerTrackingTableProps) => {
   const [records, setRecords] = useState<TrackingRecord[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,11 +60,11 @@ export const PlayerTrackingTable = ({ teamId, refreshTrigger }: PlayerTrackingTa
   const pageSize = 15;
 
   useEffect(() => {
-    if (teamId) {
+    if (teamId && tournamentId) {
       fetchRecords();
       fetchPlayers();
     }
-  }, [teamId, currentPage, refreshTrigger]);
+  }, [teamId, tournamentId, currentPage, refreshTrigger]);
 
   const fetchRecords = async () => {
     try {

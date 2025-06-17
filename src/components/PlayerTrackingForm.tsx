@@ -10,7 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 
 interface PlayerTrackingFormProps {
   teamId: string;
+  tournamentId: string;
   capturedTime: number;
+  selectedPosition: string;
   onTrackingAdded: () => void;
 }
 
@@ -20,14 +22,20 @@ interface Player {
   jersey_number: number;
 }
 
-export const PlayerTrackingForm = ({ teamId, capturedTime, onTrackingAdded }: PlayerTrackingFormProps) => {
+export const PlayerTrackingForm = ({ 
+  teamId, 
+  tournamentId, 
+  capturedTime, 
+  selectedPosition, 
+  onTrackingAdded 
+}: PlayerTrackingFormProps) => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [formData, setFormData] = useState({
     time: '',
     player_id: '',
     action: '',
     description: '',
-    field_position: '',
+    field_position: selectedPosition,
     points_h: '',
     points_v: ''
   });
@@ -48,6 +56,10 @@ export const PlayerTrackingForm = ({ teamId, capturedTime, onTrackingAdded }: Pl
     }
   }, [capturedTime]);
 
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, field_position: selectedPosition }));
+  }, [selectedPosition]);
+
   const fetchPlayers = async () => {
     try {
       const { data, error } = await supabase
@@ -66,9 +78,12 @@ export const PlayerTrackingForm = ({ teamId, capturedTime, onTrackingAdded }: Pl
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
+    if (!tournamentId) newErrors.tournament = 'Tournament is required';
+    if (!teamId) newErrors.team = 'Team is required';
     if (!formData.time.trim()) newErrors.time = 'Time is required';
     if (!formData.player_id) newErrors.player_id = 'Player is required';
     if (!formData.action.trim()) newErrors.action = 'Action is required';
+    if (!formData.field_position.trim()) newErrors.field_position = 'Field position is required';
     
     // Validate time format (MM:SS.ss)
     const timeRegex = /^\d{1,2}:\d{2}(\.\d{2})?$/;
@@ -109,7 +124,7 @@ export const PlayerTrackingForm = ({ teamId, capturedTime, onTrackingAdded }: Pl
         tracking_time: convertTimeToSeconds(formData.time),
         action: formData.action.trim(),
         description: formData.description.trim() || null,
-        field_position: formData.field_position.trim() || null,
+        field_position: formData.field_position.trim(),
         points_h: formData.points_h ? parseFloat(formData.points_h) : null,
         points_v: formData.points_v ? parseFloat(formData.points_v) : null
       };
@@ -208,12 +223,14 @@ export const PlayerTrackingForm = ({ teamId, capturedTime, onTrackingAdded }: Pl
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Field Position</label>
+              <label className="block text-sm font-medium mb-1">Field Position *</label>
               <Input
                 value={formData.field_position}
                 onChange={(e) => setFormData({ ...formData, field_position: e.target.value })}
-                placeholder="e.g., 22m line, Try line"
+                placeholder="Select from rugby field above"
+                readOnly
               />
+              {errors.field_position && <p className="text-red-500 text-xs mt-1">{errors.field_position}</p>}
             </div>
 
             <div>

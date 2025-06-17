@@ -2,7 +2,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Play, Pause, Square, RotateCcw, Upload, Save } from 'lucide-react';
+import { Play, Pause, Square, RotateCcw, Upload, Save, Rewind, FastForward } from 'lucide-react';
 
 interface VideoPlayerSectionProps {
   onTimeCapture: (time: number) => void;
@@ -41,43 +41,61 @@ export const VideoPlayerSection = ({ onTimeCapture }: VideoPlayerSectionProps) =
   }, []);
 
   const handlePlay = () => {
-    if (video1Ref.current && video2Ref.current) {
+    // Play main video (video1) if available, otherwise play video2
+    if (video1Src && video1Ref.current) {
       video1Ref.current.play();
+      setIsPlaying(true);
+    } else if (video2Src && video2Ref.current) {
       video2Ref.current.play();
       setIsPlaying(true);
     }
   };
 
   const handlePause = () => {
-    if (video1Ref.current && video2Ref.current) {
-      video1Ref.current.pause();
-      video2Ref.current.pause();
-      setIsPlaying(false);
-    }
+    if (video1Ref.current) video1Ref.current.pause();
+    if (video2Ref.current) video2Ref.current.pause();
+    setIsPlaying(false);
   };
 
   const handleStop = () => {
-    if (video1Ref.current && video2Ref.current) {
+    if (video1Ref.current) {
       video1Ref.current.pause();
-      video2Ref.current.pause();
       video1Ref.current.currentTime = 0;
-      video2Ref.current.currentTime = 0;
-      setIsPlaying(false);
-      setCurrentTime(0);
     }
+    if (video2Ref.current) {
+      video2Ref.current.pause();
+      video2Ref.current.currentTime = 0;
+    }
+    setIsPlaying(false);
+    setCurrentTime(0);
   };
 
   const handleReset = () => {
-    if (video1Ref.current && video2Ref.current) {
-      video1Ref.current.currentTime = 0;
-      video2Ref.current.currentTime = 0;
-      setCurrentTime(0);
+    if (video1Ref.current) video1Ref.current.currentTime = 0;
+    if (video2Ref.current) video2Ref.current.currentTime = 0;
+    setCurrentTime(0);
+  };
+
+  const handleRewind = () => {
+    const activeVideo = video1Src ? video1Ref.current : video2Ref.current;
+    if (activeVideo) {
+      activeVideo.currentTime = Math.max(0, activeVideo.currentTime - 10);
+      setCurrentTime(activeVideo.currentTime);
+    }
+  };
+
+  const handleFastForward = () => {
+    const activeVideo = video1Src ? video1Ref.current : video2Ref.current;
+    if (activeVideo) {
+      activeVideo.currentTime = Math.min(activeVideo.duration, activeVideo.currentTime + 10);
+      setCurrentTime(activeVideo.currentTime);
     }
   };
 
   const handleTimeUpdate = () => {
-    if (video1Ref.current) {
-      setCurrentTime(video1Ref.current.currentTime);
+    const activeVideo = video1Src ? video1Ref.current : video2Ref.current;
+    if (activeVideo) {
+      setCurrentTime(activeVideo.currentTime);
     }
   };
 
@@ -91,6 +109,8 @@ export const VideoPlayerSection = ({ onTimeCapture }: VideoPlayerSectionProps) =
     const ms = Math.floor((seconds % 1) * 100);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
   };
+
+  const hasAnyVideo = video1Src || video2Src;
 
   return (
     <div className="space-y-4">
@@ -154,6 +174,7 @@ export const VideoPlayerSection = ({ onTimeCapture }: VideoPlayerSectionProps) =
                     ref={video2Ref}
                     src={video2Src}
                     className="w-full h-auto max-h-64 mx-auto"
+                    onTimeUpdate={handleTimeUpdate}
                     controls={false}
                   />
                 ) : (
@@ -194,7 +215,7 @@ export const VideoPlayerSection = ({ onTimeCapture }: VideoPlayerSectionProps) =
             <div className="flex items-center gap-2">
               <Button
                 onClick={handlePlay}
-                disabled={!video1Src || isPlaying}
+                disabled={!hasAnyVideo || isPlaying}
                 size="sm"
               >
                 <Play className="h-4 w-4" />
@@ -202,7 +223,7 @@ export const VideoPlayerSection = ({ onTimeCapture }: VideoPlayerSectionProps) =
               
               <Button
                 onClick={handlePause}
-                disabled={!video1Src || !isPlaying}
+                disabled={!hasAnyVideo || !isPlaying}
                 size="sm"
               >
                 <Pause className="h-4 w-4" />
@@ -210,15 +231,33 @@ export const VideoPlayerSection = ({ onTimeCapture }: VideoPlayerSectionProps) =
               
               <Button
                 onClick={handleStop}
-                disabled={!video1Src}
+                disabled={!hasAnyVideo}
                 size="sm"
               >
                 <Square className="h-4 w-4" />
               </Button>
               
               <Button
+                onClick={handleRewind}
+                disabled={!hasAnyVideo}
+                size="sm"
+                variant="outline"
+              >
+                <Rewind className="h-4 w-4" />
+              </Button>
+              
+              <Button
+                onClick={handleFastForward}
+                disabled={!hasAnyVideo}
+                size="sm"
+                variant="outline"
+              >
+                <FastForward className="h-4 w-4" />
+              </Button>
+              
+              <Button
                 onClick={handleReset}
-                disabled={!video1Src}
+                disabled={!hasAnyVideo}
                 size="sm"
                 variant="outline"
               >
@@ -229,7 +268,7 @@ export const VideoPlayerSection = ({ onTimeCapture }: VideoPlayerSectionProps) =
 
               <Button
                 onClick={handleSaveTime}
-                disabled={!video1Src}
+                disabled={!hasAnyVideo}
                 className="bg-green-500 hover:bg-green-600"
               >
                 <Save className="h-4 w-4 mr-2" />

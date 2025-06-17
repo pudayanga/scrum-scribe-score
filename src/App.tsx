@@ -11,6 +11,7 @@ import Teams from "./pages/Teams";
 import Players from "./pages/Players";
 import Matches from "./pages/Matches";
 import Statistics from "./pages/Statistics";
+import PlayerTracking from "./pages/PlayerTracking";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -42,6 +43,7 @@ const AppRoutes = () => {
       <Route path="/players" element={<ProtectedRoute><Players /></ProtectedRoute>} />
       <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
       <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+      <Route path="/player-tracking" element={<ProtectedRoute><PlayerTracking /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
