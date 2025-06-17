@@ -18,6 +18,10 @@ export const QuickActions = ({ userRole }: QuickActionsProps) => {
     navigate('/player-tracking');
   };
 
+  const handleScheduleMatch = () => {
+    navigate('/matches');
+  };
+
   return (
     <>
       <Card>
@@ -48,7 +52,11 @@ export const QuickActions = ({ userRole }: QuickActionsProps) => {
                 Track Player
               </Button>
               
-              <Button className="w-full justify-start" variant="outline">
+              <Button 
+                className="w-full justify-start" 
+                variant="outline"
+                onClick={handleScheduleMatch}
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Schedule Match
               </Button>

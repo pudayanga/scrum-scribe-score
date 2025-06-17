@@ -83,6 +83,11 @@ const Players = () => {
       setPlayers(data || []);
     } catch (error) {
       console.error('Error fetching players:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch players. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -99,6 +104,11 @@ const Players = () => {
       setTeams(data || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch teams. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -124,11 +134,21 @@ const Players = () => {
 
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.jersey_number) newErrors.jersey_number = 'Jersey number is required';
-    if (!formData.team_id) newErrors.team_id = 'Team is required';
+    if (!formData.team_id) newErrors.team_id = 'Team selection is required';
     
     const jerseyNum = parseInt(formData.jersey_number);
     if (isNaN(jerseyNum) || jerseyNum < 1 || jerseyNum > 99) {
       newErrors.jersey_number = 'Jersey number must be between 1 and 99';
+    }
+
+    // Check for duplicate jersey number in same team
+    const duplicateJersey = players.find(p => 
+      p.jersey_number === jerseyNum && 
+      p.team_id === formData.team_id && 
+      p.id !== editingPlayer?.id
+    );
+    if (duplicateJersey) {
+      newErrors.jersey_number = 'Jersey number already exists in this team';
     }
 
     if (formData.age && (parseInt(formData.age) < 16 || parseInt(formData.age) > 50)) {
@@ -287,7 +307,6 @@ const Players = () => {
                 <DialogTitle>{editingPlayer ? 'Edit Player' : 'Add New Player'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Form fields - same as in AddPlayerModal but inline */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Name *</label>
                   <Input
@@ -298,19 +317,6 @@ const Players = () => {
                   {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </div>
                 
-                <div>
-                  <label className="block text-sm font-medium mb-1">Jersey Number *</label>
-                  <Input
-                    type="number"
-                    value={formData.jersey_number}
-                    onChange={(e) => setFormData({ ...formData, jersey_number: e.target.value })}
-                    placeholder="1-99"
-                    min="1"
-                    max="99"
-                  />
-                  {errors.jersey_number && <p className="text-red-500 text-xs mt-1">{errors.jersey_number}</p>}
-                </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-1">Team *</label>
                   <Select value={formData.team_id} onValueChange={(value) => setFormData({ ...formData, team_id: value })}>
@@ -324,6 +330,19 @@ const Players = () => {
                     </SelectContent>
                   </Select>
                   {errors.team_id && <p className="text-red-500 text-xs mt-1">{errors.team_id}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Jersey Number *</label>
+                  <Input
+                    type="number"
+                    value={formData.jersey_number}
+                    onChange={(e) => setFormData({ ...formData, jersey_number: e.target.value })}
+                    placeholder="1-99"
+                    min="1"
+                    max="99"
+                  />
+                  {errors.jersey_number && <p className="text-red-500 text-xs mt-1">{errors.jersey_number}</p>}
                 </div>
 
                 <div>
