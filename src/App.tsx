@@ -43,11 +43,10 @@ const AppRoutes = () => {
       
       {user?.role === 'admin' ? (
         <>
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/coaches" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/permissions" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/messages" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/notifications" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/coaches" element={<ProtectedRoute><AdminDashboard activeTab="coaches" /></ProtectedRoute>} />
+          <Route path="/admin/permissions" element={<ProtectedRoute><AdminDashboard activeTab="permissions" /></ProtectedRoute>} />
+          <Route path="/admin/messages" element={<ProtectedRoute><AdminDashboard activeTab="messages" /></ProtectedRoute>} />
+          <Route path="/admin/notifications" element={<ProtectedRoute><AdminDashboard activeTab="notifications" /></ProtectedRoute>} />
         </>
       ) : (
         <>
