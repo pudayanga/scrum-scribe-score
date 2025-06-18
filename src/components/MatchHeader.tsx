@@ -1,9 +1,8 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Play, Pause, Square } from 'lucide-react';
-import type { MatchData } from '../pages/Index';
+import type { MatchData } from '../types/rugby';
 
 interface MatchHeaderProps {
   match: MatchData;

@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus } from 'lucide-react';
-import type { Team, ScoringEvent } from '../pages/Index';
+import type { Team, ScoringEvent } from '../types/rugby';
 
 interface ScoreInputProps {
   teams: [Team, Team];

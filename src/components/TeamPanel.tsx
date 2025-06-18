@@ -1,6 +1,5 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Team } from '../pages/Index';
+import type { Team } from '../types/rugby';
 
 interface TeamPanelProps {
   team: Team;

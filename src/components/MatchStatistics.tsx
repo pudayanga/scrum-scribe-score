@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BarChart3 } from 'lucide-react';
-import type { Team } from '../pages/Index';
+import type { Team } from '../types/rugby';
 
 interface MatchStatisticsProps {
   teams: [Team, Team];

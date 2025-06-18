@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock } from 'lucide-react';
-import type { ScoringEvent, Team } from '../pages/Index';
+import type { ScoringEvent, Team } from '../types/rugby';
 
 interface ScoringTimelineProps {
   events: ScoringEvent[];
