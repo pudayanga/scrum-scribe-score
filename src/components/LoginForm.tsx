@@ -3,14 +3,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 
 export const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'coach' | 'viewer' | 'admin'>('viewer');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -22,13 +20,13 @@ export const LoginForm = () => {
     setError('');
     setLoading(true);
 
-    if (!username || !password || !role) {
+    if (!username || !password) {
       setError('Please fill in all fields');
       setLoading(false);
       return;
     }
 
-    const result = await login(username, password, role);
+    const result = await login(username, password);
     
     if (result.success) {
       navigate('/');
@@ -74,22 +72,6 @@ export const LoginForm = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Role
-              </label>
-              <Select value={role} onValueChange={(value: 'coach' | 'viewer' | 'admin') => setRole(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="viewer">Viewer</SelectItem>
-                  <SelectItem value="coach">Coach</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {error && (
               <div className="text-red-600 text-sm bg-red-50 p-2 rounded">
                 {error}
@@ -103,8 +85,8 @@ export const LoginForm = () => {
 
           <div className="mt-4 text-xs text-gray-500">
             <p>Demo credentials:</p>
-            <p>Username: coach1, Password: password123, Role: coach</p>
-            <p>Username: admin1, Password: password123, Role: admin</p>
+            <p>Username: coach1, Password: password123</p>
+            <p>Username: admin1, Password: password123</p>
           </div>
         </CardContent>
       </Card>

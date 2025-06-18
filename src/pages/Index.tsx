@@ -9,6 +9,8 @@ import { QuickActions } from '../components/QuickActions';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, Button } from '@mui/material';
+import { CoachMessaging, NotificationPanel } from '../components/CoachMessaging';
 
 export interface Team {
   id: string;
@@ -358,59 +360,83 @@ const Index = () => {
 
   return (
     <Layout>
-      {/* Main Title */}
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Rugby Scoring System</h1>
-        <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          A modern rugby scoring application for tournaments, teams, and 
-          matches with live updates and statistics.
-        </p>
-      </div>
+      <div className="space-y-6">
+        {/* Admin Dashboard Link */}
+        {user?.role === 'admin' && (
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Admin Panel</h3>
+                <Button onClick={() => window.location.href = '/admin'}>
+                  Go to Admin Dashboard
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Match Header */}
-      <MatchHeader 
-        match={match}
-        isTimerRunning={isTimerRunning}
-        onTimerToggle={() => setIsTimerRunning(!isTimerRunning)}
-        onStatusChange={handleStatusChange}
-        formatTime={formatTime}
-        userRole={user?.role || 'viewer'}
-      />
-
-      {/* Team Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <TeamPanel team={match.teams[0]} />
-        <TeamPanel team={match.teams[1]} />
-      </div>
-
-      {/* Score Input and Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {(user?.role === 'coach' || user?.role === 'admin') && (
-          <div className="lg:col-span-2">
-            <ScoreInput 
-              teams={match.teams}
-              onScoreAdd={handleScoreAdd}
-              userRole={user.role}
-              userTeamId={undefined}
-              getPointsForScoreType={getPointsForScoreType}
-              isMatchLive={match.status === 'live'}
-            />
+        {/* Coach Messaging and Notifications */}
+        {user?.role === 'coach' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CoachMessaging />
+            <NotificationPanel />
           </div>
         )}
-        <QuickActions userRole={user?.role || 'viewer'} />
-      </div>
 
-      {/* Timeline and Statistics */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ScoringTimeline events={scoringEvents} teams={match.teams} />
-        <MatchStatistics teams={match.teams} />
-      </div>
+        {/* Main Title */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Rugby Scoring System</h1>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            A modern rugby scoring application for tournaments, teams, and 
+            matches with live updates and statistics.
+          </p>
+        </div>
 
-      {/* Footer */}
-      <div className="text-center mt-12 pt-8 border-t border-gray-200">
-        <p className="text-sm text-gray-500">
-          © 2025 Rugby Scorer • Modern rugby scoring application
-        </p>
+        {/* Match Header */}
+        <MatchHeader 
+          match={match}
+          isTimerRunning={isTimerRunning}
+          onTimerToggle={() => setIsTimerRunning(!isTimerRunning)}
+          onStatusChange={handleStatusChange}
+          formatTime={formatTime}
+          userRole={user?.role || 'viewer'}
+        />
+
+        {/* Team Panels */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <TeamPanel team={match.teams[0]} />
+          <TeamPanel team={match.teams[1]} />
+        </div>
+
+        {/* Score Input and Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {(user?.role === 'coach' || user?.role === 'admin') && (
+            <div className="lg:col-span-2">
+              <ScoreInput 
+                teams={match.teams}
+                onScoreAdd={handleScoreAdd}
+                userRole={user.role}
+                userTeamId={undefined}
+                getPointsForScoreType={getPointsForScoreType}
+                isMatchLive={match.status === 'live'}
+              />
+            </div>
+          )}
+          <QuickActions userRole={user?.role || 'viewer'} />
+        </div>
+
+        {/* Timeline and Statistics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ScoringTimeline events={scoringEvents} teams={match.teams} />
+          <MatchStatistics teams={match.teams} />
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-12 pt-8 border-t border-gray-200">
+          <p className="text-sm text-gray-500">
+            © 2025 Rugby Scorer • Modern rugby scoring application
+          </p>
+        </div>
       </div>
     </Layout>
   );
