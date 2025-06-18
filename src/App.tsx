@@ -40,51 +40,62 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-      {user?.role === 'admin' && (
-        <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+      
+      {user?.role === 'admin' ? (
+        <>
+          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/coaches" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/permissions" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/messages" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/notifications" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        </>
+      ) : (
+        <>
+          <Route path="/tournaments" element={
+            <ProtectedRoute>
+              <PermissionGuard page="tournaments">
+                <Tournaments />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/teams" element={
+            <ProtectedRoute>
+              <PermissionGuard page="teams">
+                <Teams />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/players" element={
+            <ProtectedRoute>
+              <PermissionGuard page="players">
+                <Players />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/matches" element={
+            <ProtectedRoute>
+              <PermissionGuard page="matches">
+                <Matches />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/statistics" element={
+            <ProtectedRoute>
+              <PermissionGuard page="statistics">
+                <Statistics />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+          <Route path="/player-tracking" element={
+            <ProtectedRoute>
+              <PermissionGuard page="player_tracking">
+                <PlayerTracking />
+              </PermissionGuard>
+            </ProtectedRoute>
+          } />
+        </>
       )}
-      <Route path="/tournaments" element={
-        <ProtectedRoute>
-          <PermissionGuard page="tournaments">
-            <Tournaments />
-          </PermissionGuard>
-        </ProtectedRoute>
-      } />
-      <Route path="/teams" element={
-        <ProtectedRoute>
-          <PermissionGuard page="teams">
-            <Teams />
-          </PermissionGuard>
-        </ProtectedRoute>
-      } />
-      <Route path="/players" element={
-        <ProtectedRoute>
-          <PermissionGuard page="players">
-            <Players />
-          </PermissionGuard>
-        </ProtectedRoute>
-      } />
-      <Route path="/matches" element={
-        <ProtectedRoute>
-          <PermissionGuard page="matches">
-            <Matches />
-          </PermissionGuard>
-        </ProtectedRoute>
-      } />
-      <Route path="/statistics" element={
-        <ProtectedRoute>
-          <PermissionGuard page="statistics">
-            <Statistics />
-          </PermissionGuard>
-        </ProtectedRoute>
-      } />
-      <Route path="/player-tracking" element={
-        <ProtectedRoute>
-          <PermissionGuard page="player_tracking">
-            <PlayerTracking />
-          </PermissionGuard>
-        </ProtectedRoute>
-      } />
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

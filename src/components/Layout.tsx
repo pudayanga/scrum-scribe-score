@@ -11,14 +11,37 @@ export const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
 
-  const navItems = [
-    { path: '/', label: 'Home' },
-    { path: '/tournaments', label: 'Tournaments' },
-    { path: '/teams', label: 'Teams' },
-    { path: '/players', label: 'Players' },
-    { path: '/matches', label: 'Matches' },
-    { path: '/statistics', label: 'Statistics' },
-  ];
+  // Different navigation items based on user role
+  const getNavItems = () => {
+    if (user?.role === 'admin') {
+      return [
+        { path: '/', label: 'Dashboard' },
+        { path: '/admin/coaches', label: 'Coaches' },
+        { path: '/admin/permissions', label: 'Permissions' },
+        { path: '/admin/messages', label: 'Messages' },
+        { path: '/admin/notifications', label: 'Notifications' },
+      ];
+    } else {
+      return [
+        { path: '/', label: 'Home' },
+        { path: '/tournaments', label: 'Tournaments' },
+        { path: '/teams', label: 'Teams' },
+        { path: '/players', label: 'Players' },
+        { path: '/matches', label: 'Matches' },
+        { path: '/statistics', label: 'Statistics' },
+      ];
+    }
+  };
+
+  const navItems = getNavItems();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -26,7 +49,9 @@ export const Layout = ({ children }: LayoutProps) => {
       <div className="bg-white border-b border-gray-200 px-4 py-2">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-semibold text-gray-800">Rugby Scoring</h1>
+            <h1 className="text-xl font-semibold text-gray-800">
+              {user?.role === 'admin' ? 'Rugby Admin Panel' : 'Rugby Scoring'}
+            </h1>
             <div className="flex items-center space-x-6 text-sm">
               {navItems.map((item) => (
                 <Link
@@ -46,9 +71,9 @@ export const Layout = ({ children }: LayoutProps) => {
           {user && (
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {user.role === 'coach' ? `Welcome ${user.full_name}` : `Role: ${user.role}`}
+                {user.role === 'admin' ? `Admin: ${user.full_name}` : `Welcome ${user.full_name}`}
               </span>
-              <Button variant="outline" size="sm" onClick={logout}>
+              <Button variant="outline" size="sm" onClick={handleLogout}>
                 Logout
               </Button>
             </div>

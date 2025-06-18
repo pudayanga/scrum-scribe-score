@@ -48,8 +48,9 @@ interface Message {
 const AdminDashboard = () => {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedCoachForPermissions, setSelectedCoachForPermissions] = useState<string>('');
+  const [selectedCoachPermissions, setSelectedCoachPermissions] = useState<Coach | null>(null);
   const [isAddCoachOpen, setIsAddCoachOpen] = useState(false);
-  const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
   const [newCoach, setNewCoach] = useState({
     username: '',
     full_name: '',
@@ -67,6 +68,15 @@ const AdminDashboard = () => {
     fetchCoaches();
     fetchMessages();
   }, []);
+
+  useEffect(() => {
+    if (selectedCoachForPermissions) {
+      const coach = coaches.find(c => c.id === selectedCoachForPermissions);
+      setSelectedCoachPermissions(coach || null);
+    } else {
+      setSelectedCoachPermissions(null);
+    }
+  }, [selectedCoachForPermissions, coaches]);
 
   const fetchCoaches = async () => {
     try {
@@ -277,7 +287,7 @@ const AdminDashboard = () => {
     <Layout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold">Admin Management</h1>
         </div>
 
         <Tabs defaultValue="coaches" className="space-y-4">
@@ -392,17 +402,38 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {coaches.map((coach) => (
-                    <div key={coach.id} className="border rounded-lg p-4">
-                      <h4 className="font-semibold mb-3">{coach.full_name}</h4>
-                      <div className="grid grid-cols-3 gap-4">
-                        {Object.entries(coach.permissions || {}).map(([permission, enabled]) => (
+                  <div>
+                    <Label htmlFor="coach_select">Select Coach</Label>
+                    <Select
+                      value={selectedCoachForPermissions}
+                      onValueChange={setSelectedCoachForPermissions}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a coach to manage permissions" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {coaches.map((coach) => (
+                          <SelectItem key={coach.id} value={coach.id}>
+                            {coach.full_name} ({coach.username})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedCoachPermissions && (
+                    <div className="border rounded-lg p-4">
+                      <h4 className="font-semibold mb-3">
+                        Permissions for {selectedCoachPermissions.full_name}
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        {Object.entries(selectedCoachPermissions.permissions || {}).map(([permission, enabled]) => (
                           <div key={permission} className="flex items-center space-x-2">
                             <Switch
                               checked={enabled}
                               onCheckedChange={(checked) => 
-                                handleUpdatePermissions(coach.id, {
-                                  ...coach.permissions,
+                                handleUpdatePermissions(selectedCoachPermissions.id, {
+                                  ...selectedCoachPermissions.permissions,
                                   [permission]: checked
                                 })
                               }
@@ -412,7 +443,7 @@ const AdminDashboard = () => {
                         ))}
                       </div>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
