@@ -9,6 +9,171 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admins: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          password_hash: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          password_hash: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          password_hash?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      coach_messages: {
+        Row: {
+          admin_response: string | null
+          coach_id: string
+          created_at: string
+          id: string
+          message: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_response?: string | null
+          coach_id: string
+          created_at?: string
+          id?: string
+          message: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_response?: string | null
+          coach_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_messages_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coach_permissions: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          matches: boolean
+          player_tracking: boolean
+          players: boolean
+          statistics: boolean
+          teams: boolean
+          tournaments: boolean
+          updated_at: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          matches?: boolean
+          player_tracking?: boolean
+          players?: boolean
+          statistics?: boolean
+          teams?: boolean
+          tournaments?: boolean
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          matches?: boolean
+          player_tracking?: boolean
+          players?: boolean
+          statistics?: boolean
+          teams?: boolean
+          tournaments?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_permissions_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: true
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coaches: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_active: boolean
+          password_hash: string
+          phone: string | null
+          team_id: string | null
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          is_active?: boolean
+          password_hash: string
+          phone?: string | null
+          team_id?: string | null
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          password_hash?: string
+          phone?: string | null
+          team_id?: string | null
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coaches_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           created_at: string
@@ -75,6 +240,41 @@ export type Database = {
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          coach_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
             referencedColumns: ["id"]
           },
         ]

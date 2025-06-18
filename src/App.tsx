@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { PermissionGuard } from "@/components/PermissionGuard";
 import Index from "./pages/Index";
 import Tournaments from "./pages/Tournaments";
 import Teams from "./pages/Teams";
@@ -14,6 +15,7 @@ import Statistics from "./pages/Statistics";
 import PlayerTracking from "./pages/PlayerTracking";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
