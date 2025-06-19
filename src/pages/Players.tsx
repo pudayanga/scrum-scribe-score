@@ -163,7 +163,7 @@ const Players = () => {
         name: formData.name.trim(),
         jersey_number: parseInt(formData.jersey_number),
         position: formData.position || null,
-        team_id: isCoach ? getTeamFilter() || formData.team_id : formData.team_id,
+        team_id: formData.team_id, // Always use the selected team_id from the form
         age: formData.age ? parseInt(formData.age) : null,
         weight: formData.weight ? parseFloat(formData.weight) : null,
         height: formData.height ? parseFloat(formData.height) : null,
@@ -240,7 +240,7 @@ const Players = () => {
       name: '',
       jersey_number: '',
       position: '',
-      team_id: '',
+      team_id: isCoach ? (getTeamFilter() || '') : '', // Pre-populate team for coaches
       age: '',
       weight: '',
       height: '',
@@ -294,24 +294,25 @@ const Players = () => {
                     {errors.jersey_number && <p className="text-red-500 text-xs mt-1">{errors.jersey_number}</p>}
                   </div>
 
-                  {!isCoach && (
-                    <div>
-                      <Label htmlFor="team_id">Team *</Label>
-                      <Select value={formData.team_id} onValueChange={(value) => setFormData({...formData, team_id: value})}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a team" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teams.map((team) => (
-                            <SelectItem key={team.id} value={team.id}>
-                              {team.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.team_id && <p className="text-red-500 text-xs mt-1">{errors.team_id}</p>}
-                    </div>
-                  )}
+                  <div>
+                    <Label htmlFor="team_id">Team *</Label>
+                    <Select 
+                      value={formData.team_id} 
+                      onValueChange={(value) => setFormData({...formData, team_id: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.team_id && <p className="text-red-500 text-xs mt-1">{errors.team_id}</p>}
+                  </div>
 
                   <div>
                     <Label htmlFor="position">Position</Label>

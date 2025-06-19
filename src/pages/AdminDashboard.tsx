@@ -136,7 +136,7 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
     try {
       const coachData = {
         username: newCoach.username,
-        password_hash: 'hashed_password',
+        password_hash: newCoach.password,
         full_name: newCoach.full_name,
         email: newCoach.email,
         is_active: true
@@ -241,7 +241,9 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
         .from('coach_permissions')
         .select('*')
         .eq('coach_id', coachId)
-        .single();
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
 
       const updatedPermissions = {
         ...existingPermissions,
@@ -279,7 +281,8 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
         description: "Permission updated successfully!",
       });
 
-      fetchCoaches();
+      // Refresh coaches data to update the UI
+      await fetchCoaches();
     } catch (error) {
       console.error('Error updating permission:', error);
       toast({
@@ -537,7 +540,7 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
                 {Object.entries(selectedCoachPermissions.permissions || {}).map(([permission, enabled]) => (
                   <div key={permission} className="flex items-center space-x-2">
                     <Switch
-                      checked={enabled}
+                      checked={Boolean(enabled)}
                       onCheckedChange={(checked) => 
                         handleUpdatePermissions(selectedCoachPermissions.id, permission, checked)
                       }
