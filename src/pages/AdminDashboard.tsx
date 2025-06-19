@@ -54,6 +54,7 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
   const [selectedCoachForPermissions, setSelectedCoachForPermissions] = useState<string>('');
   const [selectedCoachPermissions, setSelectedCoachPermissions] = useState<Coach | null>(null);
   const [isAddCoachOpen, setIsAddCoachOpen] = useState(false);
+  const [editingCoach, setEditingCoach] = useState<Coach | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [coachesPerPage] = useState(10);
   const [newCoach, setNewCoach] = useState({
@@ -133,50 +134,79 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
 
   const handleAddCoach = async () => {
     try {
-      const { data: coach, error: coachError } = await supabase
-        .from('coaches')
-        .insert([{
-          username: newCoach.username,
-          password_hash: 'hashed_password',
-          full_name: newCoach.full_name,
-          email: newCoach.email,
-          is_active: true
-        }])
-        .select()
-        .single();
+      const coachData = {
+        username: newCoach.username,
+        password_hash: 'hashed_password',
+        full_name: newCoach.full_name,
+        email: newCoach.email,
+        is_active: true
+      };
 
-      if (coachError) throw coachError;
+      let coach;
+      if (editingCoach) {
+        const { data: updatedCoach, error: coachError } = await supabase
+          .from('coaches')
+          .update(coachData)
+          .eq('id', editingCoach.id)
+          .select()
+          .single();
 
-      const { error: permError } = await supabase
-        .from('coach_permissions')
-        .insert([{
-          coach_id: coach.id,
-          tournaments: false,
-          teams: false,
-          players: false,
-          matches: false,
-          statistics: false,
-          player_tracking: false
-        }]);
+        if (coachError) throw coachError;
+        coach = updatedCoach;
+      } else {
+        const { data: newCoachData, error: coachError } = await supabase
+          .from('coaches')
+          .insert([coachData])
+          .select()
+          .single();
 
-      if (permError) throw permError;
+        if (coachError) throw coachError;
+        coach = newCoachData;
+
+        // Only create permissions for new coaches
+        const { error: permError } = await supabase
+          .from('coach_permissions')
+          .insert([{
+            coach_id: coach.id,
+            tournaments: false,
+            teams: false,
+            players: false,
+            matches: false,
+            statistics: false,
+            player_tracking: false
+          }]);
+
+        if (permError) throw permError;
+      }
 
       toast({
         title: "Success",
-        description: "Coach added successfully!",
+        description: editingCoach ? "Coach updated successfully!" : "Coach added successfully!",
       });
 
       setNewCoach({ username: '', full_name: '', email: '', password: 'password123' });
+      setEditingCoach(null);
       setIsAddCoachOpen(false);
       fetchCoaches();
     } catch (error) {
-      console.error('Error adding coach:', error);
+      console.error('Error saving coach:', error);
       toast({
         title: "Error",
-        description: "Failed to add coach.",
+        description: editingCoach ? "Failed to update coach." : "Failed to add coach.",
         variant: "destructive",
       });
     }
+  };
+
+  const handleEditCoach = (coach: Coach) => {
+    setEditingCoach(coach);
+    setNewCoach({
+      username: coach.username,
+      full_name: coach.full_name,
+      email: coach.email,
+      password: 'password123'
+    });
+    setIsAddCoachOpen(true);
   };
 
   const handleToggleCoachStatus = async (coachId: string, isActive: boolean) => {
@@ -204,20 +234,25 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
     }
   };
 
-  const handleUpdatePermissions = async (coachId: string, permissions: any) => {
+  const handleUpdatePermissions = async (coachId: string, permission: string, value: boolean) => {
     try {
-      // First try to update existing permissions
+      // First try to get existing permissions
       const { data: existingPermissions, error: fetchError } = await supabase
         .from('coach_permissions')
-        .select('id')
+        .select('*')
         .eq('coach_id', coachId)
         .single();
+
+      const updatedPermissions = {
+        ...existingPermissions,
+        [permission]: value
+      };
 
       if (existingPermissions) {
         // Update existing permissions
         const { error } = await supabase
           .from('coach_permissions')
-          .update(permissions)
+          .update(updatedPermissions)
           .eq('coach_id', coachId);
 
         if (error) throw error;
@@ -227,7 +262,13 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
           .from('coach_permissions')
           .insert({
             coach_id: coachId,
-            ...permissions
+            tournaments: false,
+            teams: false,
+            players: false,
+            matches: false,
+            statistics: false,
+            player_tracking: false,
+            [permission]: value
           });
 
         if (error) throw error;
@@ -235,15 +276,15 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
 
       toast({
         title: "Success",
-        description: "Permissions updated successfully!",
+        description: "Permission updated successfully!",
       });
 
       fetchCoaches();
     } catch (error) {
-      console.error('Error updating permissions:', error);
+      console.error('Error updating permission:', error);
       toast({
         title: "Error",
-        description: "Failed to update permissions.",
+        description: "Failed to update permission.",
         variant: "destructive",
       });
     }
@@ -325,14 +366,17 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
           </CardTitle>
           <Dialog open={isAddCoachOpen} onOpenChange={setIsAddCoachOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button onClick={() => {
+                setEditingCoach(null);
+                setNewCoach({ username: '', full_name: '', email: '', password: 'password123' });
+              }}>
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add Coach
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add New Coach</DialogTitle>
+                <DialogTitle>{editingCoach ? 'Edit Coach' : 'Add New Coach'}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
@@ -360,8 +404,17 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
                     onChange={(e) => setNewCoach({...newCoach, email: e.target.value})}
                   />
                 </div>
+                <div>
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newCoach.password}
+                    onChange={(e) => setNewCoach({...newCoach, password: e.target.value})}
+                  />
+                </div>
                 <Button onClick={handleAddCoach} className="w-full">
-                  Add Coach
+                  {editingCoach ? 'Update Coach' : 'Add Coach'}
                 </Button>
               </div>
             </DialogContent>
@@ -392,6 +445,13 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEditCoach(coach)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                     <Button
                       size="sm"
                       variant={coach.is_active ? "destructive" : "default"}
@@ -479,10 +539,7 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
                     <Switch
                       checked={enabled}
                       onCheckedChange={(checked) => 
-                        handleUpdatePermissions(selectedCoachPermissions.id, {
-                          ...selectedCoachPermissions.permissions,
-                          [permission]: checked
-                        })
+                        handleUpdatePermissions(selectedCoachPermissions.id, permission, checked)
                       }
                     />
                     <Label className="capitalize">{permission.replace('_', ' ')}</Label>

@@ -22,6 +22,10 @@ export const QuickActions = ({ userRole }: QuickActionsProps) => {
     navigate('/matches');
   };
 
+  const handleAddPlayer = () => {
+    navigate('/players');
+  };
+
   return (
     <>
       <Card>
@@ -37,7 +41,7 @@ export const QuickActions = ({ userRole }: QuickActionsProps) => {
               <Button 
                 className="w-full justify-start" 
                 variant="outline"
-                onClick={() => setIsAddPlayerOpen(true)}
+                onClick={handleAddPlayer}
               >
                 <Users className="h-4 w-4 mr-2" />
                 Add Player
