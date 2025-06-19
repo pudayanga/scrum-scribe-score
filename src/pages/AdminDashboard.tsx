@@ -206,14 +206,32 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
 
   const handleUpdatePermissions = async (coachId: string, permissions: any) => {
     try {
-      const { error } = await supabase
+      // First try to update existing permissions
+      const { data: existingPermissions, error: fetchError } = await supabase
         .from('coach_permissions')
-        .upsert({
-          coach_id: coachId,
-          ...permissions
-        });
+        .select('id')
+        .eq('coach_id', coachId)
+        .single();
 
-      if (error) throw error;
+      if (existingPermissions) {
+        // Update existing permissions
+        const { error } = await supabase
+          .from('coach_permissions')
+          .update(permissions)
+          .eq('coach_id', coachId);
+
+        if (error) throw error;
+      } else {
+        // Insert new permissions
+        const { error } = await supabase
+          .from('coach_permissions')
+          .insert({
+            coach_id: coachId,
+            ...permissions
+          });
+
+        if (error) throw error;
+      }
 
       toast({
         title: "Success",

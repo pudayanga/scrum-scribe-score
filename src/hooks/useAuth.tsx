@@ -242,3 +242,24 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Add a new hook for team-filtered queries
+export const useTeamFilter = () => {
+  const { user } = useAuth();
+  
+  const getTeamFilter = () => {
+    if (!user) return null;
+    if (user.role === 'admin') return null; // Admins can see all data
+    return user.team_id; // Coaches can only see their team's data
+  };
+
+  const applyTeamFilter = (query: any, teamIdColumn = 'team_id') => {
+    const teamFilter = getTeamFilter();
+    if (teamFilter) {
+      return query.eq(teamIdColumn, teamFilter);
+    }
+    return query;
+  };
+
+  return { getTeamFilter, applyTeamFilter, isCoach: user?.role === 'coach' };
+};
