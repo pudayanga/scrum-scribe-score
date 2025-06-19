@@ -24,6 +24,9 @@ interface Player {
   height?: number;
   email?: string;
   phone?: string;
+  teams?: {
+    name: string;
+  };
 }
 
 interface Team {
@@ -47,6 +50,7 @@ const Players = () => {
     email: '',
     phone: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { applyTeamFilter, getTeamFilter, isCoach } = useTeamFilter();
 
@@ -73,6 +77,11 @@ const Players = () => {
       setPlayers(data || []);
     } catch (error) {
       console.error('Error fetching players:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch players.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -86,17 +95,75 @@ const Players = () => {
       setTeams(data || []);
     } catch (error) {
       console.error('Error fetching teams:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch teams.",
+        variant: "destructive",
+      });
     }
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    if (!formData.jersey_number) {
+      newErrors.jersey_number = 'Jersey number is required';
+    } else {
+      const jerseyNum = parseInt(formData.jersey_number);
+      if (isNaN(jerseyNum) || jerseyNum < 1 || jerseyNum > 99) {
+        newErrors.jersey_number = 'Jersey number must be between 1 and 99';
+      } else {
+        // Check for duplicate jersey number in same team
+        const duplicateJersey = players.find(p => 
+          p.jersey_number === jerseyNum && 
+          p.team_id === formData.team_id && 
+          p.id !== editingPlayer?.id
+        );
+        if (duplicateJersey) {
+          newErrors.jersey_number = 'Jersey number already exists in this team';
+        }
+      }
+    }
+
+    if (!formData.team_id) {
+      newErrors.team_id = 'Team selection is required';
+    }
+
+    if (formData.age && (parseInt(formData.age) < 16 || parseInt(formData.age) > 50)) {
+      newErrors.age = 'Age must be between 16 and 50';
+    }
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Invalid email format';
+    }
+
+    if (formData.weight && parseFloat(formData.weight) <= 0) {
+      newErrors.weight = 'Weight must be a positive number';
+    }
+
+    if (formData.height && parseFloat(formData.height) <= 0) {
+      newErrors.height = 'Height must be a positive number';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+
     try {
       const playerData = {
-        name: formData.name,
+        name: formData.name.trim(),
         jersey_number: parseInt(formData.jersey_number),
-        position: formData.position,
-        team_id: isCoach ? getTeamFilter() : formData.team_id,
+        position: formData.position || null,
+        team_id: isCoach ? getTeamFilter() || formData.team_id : formData.team_id,
         age: formData.age ? parseInt(formData.age) : null,
         weight: formData.weight ? parseFloat(formData.weight) : null,
         height: formData.height ? parseFloat(formData.height) : null,
@@ -109,26 +176,28 @@ const Players = () => {
           .from('players')
           .update(playerData)
           .eq('id', editingPlayer.id);
+        
         if (error) throw error;
         toast({ title: "Success", description: "Player updated successfully!" });
       } else {
         const { error } = await supabase
           .from('players')
           .insert([playerData]);
+        
         if (error) throw error;
         toast({ title: "Success", description: "Player created successfully!" });
       }
       
-      setFormData({
-        name: '', jersey_number: '', position: '', team_id: '',
-        age: '', weight: '', height: '', email: '', phone: ''
-      });
-      setEditingPlayer(null);
+      resetForm();
       setIsAddOpen(false);
       fetchPlayers();
     } catch (error) {
       console.error('Error saving player:', error);
-      toast({ title: "Error", description: "Failed to save player.", variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: "Failed to save player. Please try again.", 
+        variant: "destructive" 
+      });
     }
   };
 
@@ -142,7 +211,11 @@ const Players = () => {
       fetchPlayers();
     } catch (error) {
       console.error('Error deleting player:', error);
-      toast({ title: "Error", description: "Failed to delete player.", variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: "Failed to delete player.", 
+        variant: "destructive" 
+      });
     }
   };
 
@@ -151,7 +224,7 @@ const Players = () => {
     setFormData({
       name: player.name,
       jersey_number: player.jersey_number.toString(),
-      position: player.position,
+      position: player.position || '',
       team_id: player.team_id,
       age: player.age?.toString() || '',
       weight: player.weight?.toString() || '',
@@ -162,6 +235,22 @@ const Players = () => {
     setIsAddOpen(true);
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      jersey_number: '',
+      position: '',
+      team_id: '',
+      age: '',
+      weight: '',
+      height: '',
+      email: '',
+      phone: ''
+    });
+    setEditingPlayer(null);
+    setErrors({});
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -169,53 +258,45 @@ const Players = () => {
           <h1 className="text-3xl font-bold">Players Management</h1>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => {
-                setEditingPlayer(null);
-                setFormData({
-                  name: '', jersey_number: '', position: '', team_id: '',
-                  age: '', weight: '', height: '', email: '', phone: ''
-                });
-              }}>
+              <Button onClick={resetForm}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Player
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingPlayer ? 'Edit Player' : 'Add New Player'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">Name *</Label>
                     <Input
                       id="name"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      required
+                      placeholder="Player name"
                     />
+                    {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                   </div>
+                  
                   <div>
-                    <Label htmlFor="jersey_number">Jersey Number</Label>
+                    <Label htmlFor="jersey_number">Jersey Number *</Label>
                     <Input
                       id="jersey_number"
                       type="number"
                       value={formData.jersey_number}
                       onChange={(e) => setFormData({...formData, jersey_number: e.target.value})}
-                      required
+                      placeholder="1-99"
+                      min="1"
+                      max="99"
                     />
+                    {errors.jersey_number && <p className="text-red-500 text-xs mt-1">{errors.jersey_number}</p>}
                   </div>
-                  <div>
-                    <Label htmlFor="position">Position</Label>
-                    <Input
-                      id="position"
-                      value={formData.position}
-                      onChange={(e) => setFormData({...formData, position: e.target.value})}
-                    />
-                  </div>
+
                   {!isCoach && (
                     <div>
-                      <Label htmlFor="team_id">Team</Label>
+                      <Label htmlFor="team_id">Team *</Label>
                       <Select value={formData.team_id} onValueChange={(value) => setFormData({...formData, team_id: value})}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a team" />
@@ -228,8 +309,20 @@ const Players = () => {
                           ))}
                         </SelectContent>
                       </Select>
+                      {errors.team_id && <p className="text-red-500 text-xs mt-1">{errors.team_id}</p>}
                     </div>
                   )}
+
+                  <div>
+                    <Label htmlFor="position">Position</Label>
+                    <Input
+                      id="position"
+                      value={formData.position}
+                      onChange={(e) => setFormData({...formData, position: e.target.value})}
+                      placeholder="e.g., Forward, Back"
+                    />
+                  </div>
+
                   <div>
                     <Label htmlFor="age">Age</Label>
                     <Input
@@ -237,8 +330,11 @@ const Players = () => {
                       type="number"
                       value={formData.age}
                       onChange={(e) => setFormData({...formData, age: e.target.value})}
+                      placeholder="16-50"
                     />
+                    {errors.age && <p className="text-red-500 text-xs mt-1">{errors.age}</p>}
                   </div>
+
                   <div>
                     <Label htmlFor="weight">Weight (kg)</Label>
                     <Input
@@ -247,8 +343,11 @@ const Players = () => {
                       step="0.1"
                       value={formData.weight}
                       onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                      placeholder="70"
                     />
+                    {errors.weight && <p className="text-red-500 text-xs mt-1">{errors.weight}</p>}
                   </div>
+
                   <div>
                     <Label htmlFor="height">Height (cm)</Label>
                     <Input
@@ -257,8 +356,11 @@ const Players = () => {
                       step="0.1"
                       value={formData.height}
                       onChange={(e) => setFormData({...formData, height: e.target.value})}
+                      placeholder="170"
                     />
+                    {errors.height && <p className="text-red-500 text-xs mt-1">{errors.height}</p>}
                   </div>
+
                   <div>
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -266,20 +368,30 @@ const Players = () => {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="player@example.com"
                     />
+                    {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                   </div>
+
                   <div>
                     <Label htmlFor="phone">Phone</Label>
                     <Input
                       id="phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      placeholder="Phone number"
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full">
-                  {editingPlayer ? 'Update Player' : 'Create Player'}
-                </Button>
+                
+                <div className="flex gap-2">
+                  <Button type="submit" className="flex-1">
+                    {editingPlayer ? 'Update Player' : 'Create Player'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setIsAddOpen(false)}>
+                    Cancel
+                  </Button>
+                </div>
               </form>
             </DialogContent>
           </Dialog>
@@ -296,6 +408,7 @@ const Players = () => {
                   <TableHead>Jersey #</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Position</TableHead>
+                  <TableHead>Team</TableHead>
                   <TableHead>Age</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -305,7 +418,8 @@ const Players = () => {
                   <TableRow key={player.id}>
                     <TableCell>{player.jersey_number}</TableCell>
                     <TableCell>{player.name}</TableCell>
-                    <TableCell>{player.position}</TableCell>
+                    <TableCell>{player.position || '-'}</TableCell>
+                    <TableCell>{player.teams?.name || '-'}</TableCell>
                     <TableCell>{player.age || '-'}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
