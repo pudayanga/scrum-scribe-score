@@ -30,7 +30,7 @@ const Teams = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, checkPermission } = useAuth();
   const isCoach = user?.role === 'coach';
 
   useEffect(() => {
