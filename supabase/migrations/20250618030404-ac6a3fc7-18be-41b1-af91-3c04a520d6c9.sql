@@ -7,7 +7,6 @@ CREATE TABLE public.coaches (
   full_name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   phone TEXT,
-  team_id UUID REFERENCES public.teams(id),
   is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
@@ -28,12 +27,6 @@ CREATE TABLE public.admins (
 -- Insert default admin (password hash is for 'password123')
 INSERT INTO public.admins (username, password_hash, full_name, email) 
 VALUES ('admin1', '$2b$10$rQZ8kqXz5rq3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q', 'Admin User', 'admin@example.com');
-
--- Insert demo coaches (password hash is for 'password123')
-INSERT INTO public.coaches (username, password_hash, full_name, email, team_id) 
-VALUES 
-('coach1', '$2b$10$rQZ8kqXz5rq3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q', 'John Smith', 'john.smith@example.com', (SELECT id FROM public.teams LIMIT 1)),
-('coach2', '$2b$10$rQZ8kqXz5rq3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q3q3Q', 'Sarah Johnson', 'sarah.johnson@example.com', (SELECT id FROM public.teams ORDER BY created_at DESC LIMIT 1));
 
 -- Create coach permissions table
 CREATE TABLE public.coach_permissions (
@@ -148,3 +141,7 @@ INSERT INTO public.coach_permissions (coach_id, tournaments, teams, players, mat
 SELECT id, true, true, true, true, true, true 
 FROM public.coaches 
 ON CONFLICT (coach_id) DO NOTHING;
+
+-- This is usually handled automatically, but you can drop and re-add the constraint if needed:
+alter table teams drop constraint if exists teams_tournament_id_fkey;
+alter table teams add constraint teams_tournament_id_fkey foreign key (tournament_id) references tournaments(id) on delete set null;

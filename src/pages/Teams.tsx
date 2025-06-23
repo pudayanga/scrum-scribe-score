@@ -89,16 +89,28 @@ const Teams = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
+    if (!isCoach || !user?.id) {
+      toast({
+        title: "Error",
+        description: "Only coaches can add teams.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
+      const now = new Date().toISOString();
       const teamData = {
         name: formData.name.trim(),
         logo: formData.logo.trim(),
         coach_email: formData.coach_email || null,
-        coach_id: user?.id || null, // Set coach_id to current user's id
-        tournament_id: null
+        coach_id: user.id,
+        tournament_id: null,
+        created_at: now,
+        updated_at: now
       };
 
       if (editingTeam) {
@@ -106,27 +118,27 @@ const Teams = () => {
           .from('teams')
           .update(teamData)
           .eq('id', editingTeam.id);
-        
+
         if (error) throw error;
         toast({ title: "Success", description: "Team updated successfully!" });
       } else {
         const { error } = await supabase
           .from('teams')
           .insert([teamData]);
-        
+
         if (error) throw error;
         toast({ title: "Success", description: "Team created successfully!" });
       }
-      
+
       resetForm();
       setIsAddOpen(false);
       fetchTeams();
     } catch (error) {
       console.error('Error saving team:', error);
-      toast({ 
-        title: "Error", 
-        description: "Failed to save team. Please try again.", 
-        variant: "destructive" 
+      toast({
+        title: "Error",
+        description: error?.message || "Failed to save team. Please try again.",
+        variant: "destructive"
       });
     }
   };
