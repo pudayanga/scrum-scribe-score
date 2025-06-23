@@ -14,6 +14,7 @@ import { Users, UserPlus, Settings, MessageSquare, Bell, Edit, Trash2, ChevronLe
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Layout } from '@/components/Layout';
+import bcrypt from 'bcryptjs';
 
 interface Coach {
   id: string;
@@ -134,9 +135,13 @@ const AdminDashboard = ({ activeTab = "coaches" }: AdminDashboardProps) => {
 
   const handleAddCoach = async () => {
     try {
+      // Hash the password before storing
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(newCoach.password, saltRounds);
+
       const coachData = {
         username: newCoach.username,
-        password_hash: newCoach.password,
+        password_hash: hashedPassword,
         full_name: newCoach.full_name,
         email: newCoach.email,
         is_active: true
