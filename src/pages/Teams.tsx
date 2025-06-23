@@ -4,19 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Layout } from '@/components/Layout';
-import { useTeamFilter } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Team {
   id: string;
   name: string;
   logo: string;
   coach_email: string;
+  coach_id?: string;
 }
 
 const Teams = () => {
@@ -30,7 +30,8 @@ const Teams = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
-  const { applyTeamFilter, isCoach } = useTeamFilter();
+  const { user, checkPermission } = useAuth();
+  const isCoach = user?.role === 'coach';
 
   useEffect(() => {
     fetchTeams();
@@ -39,7 +40,11 @@ const Teams = () => {
   const fetchTeams = async () => {
     try {
       let query = supabase.from('teams').select('*');
-      query = applyTeamFilter(query, 'id');
+      
+      // Filter teams by coach_id for coaches
+      if (isCoach && user?.id) {
+        query = query.eq('coach_id', user.id);
+      }
       
       const { data, error } = await query;
       if (error) throw error;
@@ -92,7 +97,8 @@ const Teams = () => {
         name: formData.name.trim(),
         logo: formData.logo.trim(),
         coach_email: formData.coach_email || null,
-        tournament_id: null // As requested, no tournament selection during team creation
+        coach_id: user?.id || null, // Set coach_id to current user's id
+        tournament_id: null
       };
 
       if (editingTeam) {
@@ -227,42 +233,45 @@ const Teams = () => {
           </Dialog>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Teams</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Logo</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Coach Email</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {teams.map((team) => (
-                  <TableRow key={team.id}>
-                    <TableCell className="text-2xl">{team.logo}</TableCell>
-                    <TableCell>{team.name}</TableCell>
-                    <TableCell>{team.coach_email || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(team)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(team.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {teams.map((team) => (
+            <Card key={team.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="text-center pb-4">
+                <div className="flex items-center justify-center space-x-3 mb-2">
+                  <span className="text-4xl">{team.logo}</span>
+                  <CardTitle className="text-xl font-bold">{team.name}</CardTitle>
+                </div>
+                {team.coach_email && (
+                  <p className="text-sm text-gray-600">{team.coach_email}</p>
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-center space-x-2">
+                  <Button size="sm" variant="outline" onClick={() => handleEdit(team)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleDelete(team.id)}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {teams.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-gray-500 mb-4">No teams found. Create your first team to get started.</p>
+              <Button onClick={() => setIsAddOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Team
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Layout>
   );

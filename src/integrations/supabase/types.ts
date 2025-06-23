@@ -176,6 +176,7 @@ export type Database = {
       }
       matches: {
         Row: {
+          coach_id: string | null
           created_at: string
           half: number | null
           id: string
@@ -191,6 +192,7 @@ export type Database = {
           venue: string | null
         }
         Insert: {
+          coach_id?: string | null
           created_at?: string
           half?: number | null
           id?: string
@@ -206,6 +208,7 @@ export type Database = {
           venue?: string | null
         }
         Update: {
+          coach_id?: string | null
           created_at?: string
           half?: number | null
           id?: string
@@ -221,6 +224,13 @@ export type Database = {
           venue?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "matches_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "matches_team1_id_fkey"
             columns: ["team1_id"]
@@ -387,6 +397,7 @@ export type Database = {
       players: {
         Row: {
           age: number | null
+          coach_id: string | null
           created_at: string
           email: string | null
           height: number | null
@@ -401,6 +412,7 @@ export type Database = {
         }
         Insert: {
           age?: number | null
+          coach_id?: string | null
           created_at?: string
           email?: string | null
           height?: number | null
@@ -415,6 +427,7 @@ export type Database = {
         }
         Update: {
           age?: number | null
+          coach_id?: string | null
           created_at?: string
           email?: string | null
           height?: number | null
@@ -428,6 +441,13 @@ export type Database = {
           weight?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "players_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "players_team_id_fkey"
             columns: ["team_id"]
@@ -498,6 +518,7 @@ export type Database = {
       teams: {
         Row: {
           coach_email: string | null
+          coach_id: string | null
           created_at: string
           id: string
           logo: string | null
@@ -507,6 +528,7 @@ export type Database = {
         }
         Insert: {
           coach_email?: string | null
+          coach_id?: string | null
           created_at?: string
           id?: string
           logo?: string | null
@@ -516,6 +538,7 @@ export type Database = {
         }
         Update: {
           coach_email?: string | null
+          coach_id?: string | null
           created_at?: string
           id?: string
           logo?: string | null
@@ -524,6 +547,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "teams_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "teams_tournament_id_fkey"
             columns: ["tournament_id"]
@@ -535,6 +565,7 @@ export type Database = {
       }
       tournaments: {
         Row: {
+          coach_id: string | null
           created_at: string
           description: string | null
           end_date: string
@@ -545,6 +576,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          coach_id?: string | null
           created_at?: string
           description?: string | null
           end_date: string
@@ -555,6 +587,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          coach_id?: string | null
           created_at?: string
           description?: string | null
           end_date?: string
@@ -564,7 +597,15 @@ export type Database = {
           status?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "coaches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

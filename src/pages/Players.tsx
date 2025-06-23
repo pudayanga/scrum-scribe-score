@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { Edit, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Layout } from '@/components/Layout';
-import { useTeamFilter } from '@/hooks/useAuth';
+import { useTeamFilter, useAuth } from '@/hooks/useAuth';
 
 interface Player {
   id: string;
@@ -19,6 +18,7 @@ interface Player {
   jersey_number: number;
   position: string;
   team_id: string;
+  coach_id?: string;
   age?: number;
   weight?: number;
   height?: number;
@@ -52,6 +52,7 @@ const Players = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const { user } = useAuth();
   const { applyTeamFilter, getTeamFilter, isCoach } = useTeamFilter();
 
   useEffect(() => {
@@ -70,7 +71,10 @@ const Players = () => {
           )
         `);
       
-      query = applyTeamFilter(query);
+      // Filter players by coach_id for coaches
+      if (isCoach && user?.id) {
+        query = query.eq('coach_id', user.id);
+      }
       
       const { data, error } = await query;
       if (error) throw error;
@@ -88,7 +92,11 @@ const Players = () => {
   const fetchTeams = async () => {
     try {
       let query = supabase.from('teams').select('id, name');
-      query = applyTeamFilter(query, 'id');
+      
+      // Filter teams by coach_id for coaches
+      if (isCoach && user?.id) {
+        query = query.eq('coach_id', user.id);
+      }
       
       const { data, error } = await query;
       if (error) throw error;
@@ -163,7 +171,8 @@ const Players = () => {
         name: formData.name.trim(),
         jersey_number: parseInt(formData.jersey_number),
         position: formData.position || null,
-        team_id: formData.team_id, // Always use the selected team_id from the form
+        team_id: formData.team_id,
+        coach_id: user?.id || null, // Set coach_id to current user's id
         age: formData.age ? parseInt(formData.age) : null,
         weight: formData.weight ? parseFloat(formData.weight) : null,
         height: formData.height ? parseFloat(formData.height) : null,
@@ -240,7 +249,7 @@ const Players = () => {
       name: '',
       jersey_number: '',
       position: '',
-      team_id: isCoach ? (getTeamFilter() || '') : '', // Pre-populate team for coaches
+      team_id: '',
       age: '',
       weight: '',
       height: '',
