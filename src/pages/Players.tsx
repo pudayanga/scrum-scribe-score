@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Edit, Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Layout } from '@/components/Layout';
-import { useTeamFilter, useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Player {
   id: string;
@@ -53,7 +54,7 @@ const Players = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const { user } = useAuth();
-  const { applyTeamFilter, getTeamFilter, isCoach } = useTeamFilter();
+  const isCoach = user?.role === 'coach';
 
   useEffect(() => {
     fetchPlayers();
